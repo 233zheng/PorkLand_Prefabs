@@ -1,3 +1,5 @@
+local modimport = modimport
+
 -- Update this list when adding files
 local components_post = {
     "eater",
@@ -20,6 +22,8 @@ local scenarios_post = {
 }
 
 local stategraphs_post = {
+    "wilson",
+    "wilson_client",
 }
 
 local brains_post = {

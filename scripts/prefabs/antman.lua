@@ -326,6 +326,7 @@ local function common()
     inst.components.trader:SetAcceptTest(ShouldAcceptItem)
     inst.components.trader.onaccept = OnGetItemFromPlayer
     inst.components.trader.onrefuse = OnRefuseItem
+    inst.components.trader:Enable()
 
     inst:AddComponent("sleeper")
     inst.components.sleeper:SetSleepTest(NormalShouldSleep)
@@ -352,13 +353,12 @@ local function common()
     inst.components.combat:SetRetargetFunction(3, NormalRetargetFn)
     inst.components.combat:SetTarget(nil)
 
-    inst:AddComponent("talker")
-    inst.components.trader:Enable()
-    inst.components.talker.ontalk = ontalk
-    inst.components.talker.fontsize = 35
-    inst.components.talker.font = TALKINGFONT
-    inst.components.talker.offset = Vector3(0, -400, 0)
-    inst.components.talker:StopIgnoringAll()
+    -- inst:AddComponent("talker")
+    -- inst.components.talker.ontalk = ontalk
+    -- inst.components.talker.fontsize = 35
+    -- inst.components.talker.font = TALKINGFONT
+    -- inst.components.talker.offset = Vector3(0, -400, 0)
+    -- inst.components.talker:StopIgnoringAll()
 
     local brain = require "brains/antbrain"
     inst:SetBrain(brain)

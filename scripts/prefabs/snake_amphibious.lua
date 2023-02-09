@@ -79,7 +79,6 @@ local function DoReturn(inst)
 end
 
 local function SanityAura(inst, observer)
-
     if observer.prefab == "webber" then
         return 0
     end
@@ -87,23 +86,19 @@ local function SanityAura(inst, observer)
     return -TUNING.SANITYAURA_SMALL
 end
 
-local function OnWaterChange(inst, onwater)
-    if onwater then
-        inst.onwater = true
-        inst.sg:GoToState("submerge")
-        inst.DynamicShadow:Enable(false)
-        inst.components.locomotor.walkspeed = 3
+-- 下水时
+local function OnEnterWater(inst)
+    inst.sg:GoToState("submerge")
+    inst.DynamicShadow:Enable(true)
+    inst.DynamicShadow:SetSize(2.5, 1.5)
+    inst.components.locomotor.walkspeed = 4
+end
 
-    else
-
-    if inst.onwater then
-        inst.sg:GoToState("emerge")
-    end
-        inst.onwater = false
-        inst.DynamicShadow:Enable(true)
-        inst.components.locomotor.walkspeed = 4
-    end
-
+-- 上岸时
+local function OnExitWater(inst)
+    inst.sg:GoToState("emerge")
+    inst.DynamicShadow:Enable(false)
+    inst.components.locomotor.walkspeed = 3
 end
 
 local function OnEntityWake(inst)
@@ -188,10 +183,16 @@ local function fn()
     inst.components.sleeper:SetSleepTest(ShouldSleep)
     inst.components.sleeper:SetWakeTest(ShouldWakeUp)
 
+    inst:AddComponent("embarker")
+
+    -- 添加两栖生物组件
+    inst:AddComponent("amphibiouscreature")
+    inst.components.amphibiouscreature:SetBanks("snake", "snake_water")
+    inst.components.amphibiouscreature:SetEnterWaterFn(OnEnterWater)
+    inst.components.amphibiouscreature:SetExitWaterFn(OnExitWater)
+
     -- inst:AddComponent("tiletracker")
 	-- inst.components.tiletracker:SetOnWaterChangeFn(OnWaterChange)
-
-	inst:ListenForEvent("newcombattarget", OnNewTarget)
 
 	inst:SetStateGraph("SGsnake")
 	local brain = require "brains/snakebrain"
@@ -204,6 +205,7 @@ local function fn()
 
 	inst:ListenForEvent("attacked", OnAttacked)
 	inst:ListenForEvent("onattackother", OnAttackOther)
+	inst:ListenForEvent("newcombattarget", OnNewTarget)
 
     MakeHauntablePanic(inst)
 	MakeMediumFreezableCharacter(inst, "hound_body")

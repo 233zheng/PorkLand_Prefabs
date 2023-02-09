@@ -2,6 +2,7 @@ local resolvefilepath = GLOBAL.resolvefilepath
 local TheNet = GLOBAL.TheNet
 
 PrefabFiles = {
+    "gold_dust",
     "antlarva",
     "adult_flytrap",
     "corkbat",
@@ -38,11 +39,15 @@ PrefabFiles = {
     "snakeskin_scaly",
     "grabbing_vine",
     "hanging_vine",
+    "tubertrees"
 }
 
 Assets = {
     --Loading this here because the meatrack needs them
     Asset("ANIM", "anim/meat_rack_food_sw.zip"),
+
+    Asset("ANIM", "anim/player_idles_poison.zip"),
+
 }
 
 -- AddMinimapAtlas("images/minimap/pl_minimap.xml")

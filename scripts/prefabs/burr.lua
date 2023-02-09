@@ -54,7 +54,7 @@ local function hatchtree(inst)
 end
 
 local function OnSeasonChange(inst)
-    if TheWorld.state.lush and not inst:HasTag("rainforesttree") then
+    if TheWorld.state.issummer and not inst:HasTag("rainforesttree") then
         inst.taskgrow, inst.taskgrowinfo = inst:ResumeTask( math.random()* TUNING.TOTAL_DAY_TIME/2,function()
             hatchtree(inst)
         end)

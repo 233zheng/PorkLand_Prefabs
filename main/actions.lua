@@ -3,11 +3,9 @@ local AddComponentAction = AddComponentAction
 GLOBAL.setfenv(1, GLOBAL)
 
 local PL_ACTIONS = {
-    HACK = Action({mindistance = 1.75, silent_fail = true}),
-    SHEAR = Action({distance = 1.75}),
-    PEAGAWK_TRANSFORM = Action({}),
     BARK = Action({}),
     RANSACK = Action({}),
+    CUREPOISON = Action({})
 }
 
 for name, ACTION in pairs(PL_ACTIONS) do
@@ -15,12 +13,6 @@ for name, ACTION in pairs(PL_ACTIONS) do
     ACTION.str = STRINGS.ACTIONS[name] or "PL_ACTION"
     AddAction(ACTION)
 end
-
-
-
-
-
-
 
 ACTIONS.BARK.fn = function(act)
     return true
@@ -30,8 +22,12 @@ ACTIONS.RANSACK.fn = function(act)
     return true
 end
 
-
-
+ACTIONS.CUREPOISON.fn = function(act)
+    if act.invobject and act.invobject.components.poisonhealer then
+        local target = act.target or act.doer
+        return act.invobject.components.poisonhealer:Cure(target)
+    end
+end
 
 -- SCENE		using an object in the world
 -- USEITEM		using an inventory item on an object in the world
@@ -45,6 +41,17 @@ local PL_COMPONENT_ACTIONS =
     },
 
     USEITEM = { -- args: inst, doer, target, actions, right
+    poisonhealer = function(inst, doer, target, actions, right)
+        if inst:HasTag("poison_antidote") and target and target:HasTag("poisonable") then
+            if target:HasTag("poison") or
+            (target:HasTag("player") and
+            ((target.components.poisonable and target.components.poisonable:IsPoisoned()) or
+            (target.player_classified and target.player_classified.ispoisoned:value()) or
+            inst:HasTag("poison_vaccine"))) then
+                table.insert(actions, ACTIONS.CUREPOISON)
+            end
+        end
+    end
     },
 
     POINT = { -- args: inst, doer, pos, actions, right, target
@@ -56,8 +63,14 @@ local PL_COMPONENT_ACTIONS =
     },
 
     INVENTORY = { -- args: inst, doer, actions, right
-
-
+    poisonhealer = function(inst, doer, actions, right)
+        if inst:HasTag("poison_antidote") and doer:HasTag("poisonable") and (doer:HasTag("player") and
+        ((doer.components.poisonable and doer.components.poisonable:IsPoisoned()) or
+        (doer.player_classified and doer.player_classified.ispoisoned:value()) or
+        inst:HasTag("poison_vaccine"))) then
+            table.insert(actions, ACTIONS.CUREPOISON)
+        end
+    end
     },
     ISVALID = { -- args: inst, action, right
     },

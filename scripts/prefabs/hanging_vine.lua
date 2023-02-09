@@ -9,6 +9,7 @@ local prefabs = {
 	"grabbing_vine",
 }
 
+-- 当玩家在附近
 local function OnPlayerNear(inst)
 	inst.AnimState:PlayAnimation("down")
     inst.AnimState:PushAnimation("idle_loop", true)
@@ -16,6 +17,7 @@ local function OnPlayerNear(inst)
     inst.DynamicShadow:SetSize(1.5, .75)
 end
 
+-- 当玩家远离
 local function OnPlayerFar(inst)
     inst.AnimState:PlayAnimation("up")
     inst.SoundEmitter:PlaySound("dontstarve/cave/rope_up")
@@ -23,12 +25,12 @@ local function OnPlayerFar(inst)
 end
 
 local function round(x)
-  x = x *10
-  local num = x>=0 and math.floor(x+0.5) or math.ceil(x-0.5)
-  print(num)
-  return num/10
+    x = x *10
+    local num = x>=0 and math.floor(x+0.5) or math.ceil(x-0.5)
+    return num/10
 end
 
+-- 放置Goff网格
 local function PlaceGoffGrids(inst, radiusMax, prefab, musttags)
     local x, y, z = inst.Transform:GetWorldPosition()
     local offgrid = false
@@ -45,12 +47,10 @@ local function PlaceGoffGrids(inst, radiusMax, prefab, musttags)
 
         if math.random() > 0.5 then
         	xdiff = -xdiff
-            print(xdiff)
         end
 
         if math.random() > 0.5 then
         	ydiff = -ydiff
-            print(ydiff)
         end
 
         x = x + xdiff
@@ -59,53 +59,54 @@ local function PlaceGoffGrids(inst, radiusMax, prefab, musttags)
         local ents = TheSim:FindEntities(x, y, z, radius, musttags)
         local test = true
         for i , ent in ipairs(ents) do
-            print(tostring(ents))
             local entx, enty, entz = ent.Transform:GetWorldPosition()
-           print("checing round x:",round(x),round(entx),"z:", round(z), round(entz),"diff:",round(math.abs(entx-x)),round( math.abs(entz-z)) )
             if round(x) == round(entx) or round(z) == round(entz) or ( math.abs(round(entx-x)) == math.abs(round(entz-z)) )  then
                 test = false
-                print("test fail")
                 break
             end
         end
 
         offgrid = test
         inc = inc + 1
-        print(test, offgrid, rad, ydiff, xdiff, radiusMax, x, y, z)
     end
 
     local tile = TheWorld.Map:GetTileAtPoint(x,y,z)
-    if  tile == WORLD_TILES.DEEPRAINFOREST then
+    if tile == WORLD_TILES.DEEPRAINFOREST then
     	local plant = SpawnPrefab(prefab)
     	plant.Transform:SetPosition(x, y, z)
     	plant.spawnpatch = inst
-        print(tostring(plant))
+        plant.AnimState:PlayAnimation("up")
+        plant.DynamicShadow:SetSize(0, 0)
     	return true
 	end
+
 	return false
 end
 
+-- 生成藤蔓
 local function SpawnItem(inst, prefab)
 	local rad = 14
+    -- 如果生成的prefab是打人藤蔓，那么生成最大半径为12
 	if prefab == "grabbing_vine" then
 		rad = 12
 	end
+    -- 放置Goff网格
 	PlaceGoffGrids(inst, rad, prefab,{"hangingvine"})
 end
 
+-- 生成藤蔓
 local function SpawnVines(inst)
 	inst.spawnedchildren = true
     for i = 1, math.random(8,16), 1 do
         SpawnItem(inst,"hanging_vine")
-        inst:SetPrefabName("hanging_vine")
     end
 
     for i = 1, math.random(6,9), 1 do
     	SpawnItem(inst,"grabbing_vine")
-        inst:SetPrefabName("grabbing_vine")
     end
 end
 
+-- 生成新的藤蔓
 local function SpawnNewVine(inst, prefab)
 	if not inst.spawntasks then
 		inst.spawntasks = {}
@@ -114,20 +115,30 @@ local function SpawnNewVine(inst, prefab)
 	local newtask = {}
     inst.spawntasks[newtask] = newtask
 	newtask.prefab = prefab
-    newtask.task, newtask.taskinfo = inst:ResumeTask(spawntime,
-        function()
+    newtask.task, newtask.taskinfo = inst:ResumeTask(spawntime, function()
             SpawnItem(inst,newtask.prefab)
             inst.spawntasks[newtask] = nil
         end)
     inst.spawntasks[newtask] = newtask
 end
 
+-- 在被剪掉的时候
+local function OnShear(inst)
+    if inst.spawnpatch then
+        inst.spawnpatch.spawnNewVine(inst.spawnpatch, inst.prefab)
+        print(tostring(inst.spawnpatch).. tostring(inst.prefab))
+
+    end
+
+    inst:Remove()
+end
+
 local function OnSave(inst, data)
     data.spawnedchildren = inst.spawnedchildren
     if inst.spawntasks then
     	data.spawntasks= {}
-    	for i,oldtask in pairs(inst.spawntasks)do
-            local test = inst:DoTaskInTime(5,function()end)
+    	for i, oldtask in pairs(inst.spawntasks) do
+            local test = inst:DoTaskInTime(5,function() end)
             dumptable(test,1,1)
 
     		local newtask = {}
@@ -151,40 +162,13 @@ local function OnLoad(inst, data)
         		newtask.prefab = oldtask.prefab
                 newtask.task, newtask.taskinfo = inst:ResumeTask(oldtask.time,
                 function()
-                    spawnitem(inst,oldtask.prefab)
+                    SpawnItem(inst,oldtask.prefab)
                     inst.spawntasks[newtask] = nil
                 end)
         	end
         end
     end
 end
-
-local function patchfn()
-	local inst = CreateEntity()
-	inst.entity:AddTransform()
-	inst.entity:AddAnimState()
-    inst.entity:AddNetwork()
-
-    inst.entity:SetPristine()
-
-    if not TheWorld.ismastersim then
-        return inst
-    end
-
-    inst:DoTaskInTime(0, function()
-        if not inst.spawnedchildren then
-            SpawnVines(inst)
-        end
-    end)
-
-    inst.OnSave = OnSave
-    inst.OnLoad = OnLoad
-    inst.spawnNewVine = SpawnNewVine
-
-    return inst
-end
-
-
 
 local function commonfn()
 	local inst = CreateEntity()
@@ -215,15 +199,10 @@ local function commonfn()
         return inst
     end
 
-    local function OnShear(inst)
-        if inst.spawnpatch then
-            inst.spawnpatch.spawnNewVine(inst.spawnpatch, inst.prefab)
-        end
-
-        inst:Remove()
-    end
+	inst:AddComponent("inspectable")
 
     inst:AddComponent("shearable")
+    inst.components.shearable.canshaveable = true
     inst.components.shearable:SetProduct("rope", 2 , false)
     inst.components.shearable:SetOnShearFn(OnShear)
 
@@ -232,8 +211,6 @@ local function commonfn()
     inst.components.playerprox:SetOnPlayerFar(OnPlayerFar)
     inst.components.playerprox:SetDist(10,16)
 
-	inst:AddComponent("inspectable")
-
     MakeMediumBurnable(inst)
     MakeSmallPropagator(inst)
     MakeHauntableIgnite(inst)
@@ -241,6 +218,31 @@ local function commonfn()
     inst.placegoffgrids = PlaceGoffGrids
 
 	return inst
+end
+
+local function patchfn()
+	local inst = CreateEntity()
+	inst.entity:AddTransform()
+	inst.entity:AddAnimState()
+    inst.entity:AddNetwork()
+
+    inst.entity:SetPristine()
+
+    if not TheWorld.ismastersim then
+        return inst
+    end
+
+    inst:DoTaskInTime(0, function()
+        if not inst.spawnedchildren then
+            SpawnVines(inst)
+        end
+    end)
+
+    inst.OnSave = OnSave
+    inst.OnLoad = OnLoad
+    inst.spawnNewVine = SpawnNewVine
+
+    return inst
 end
 
 return Prefab("hanging_vine", commonfn, assets, prefabs),
