@@ -72,11 +72,12 @@ function TileTracker:SetOnTileChangeFn(fn)
 	self.ontilechangefn = fn
 end
 
--- 两栖动物请使用amphibiouscreature组件
+-- NOTE: 两栖动物请使用amphibiouscreature组件
 function TileTracker:SetOnWaterChangeFn(fn)
 	self.onwaterchangefn = fn
 end
 
+-- 当实体在毒性地皮上时需要这个
 function TileTracker:SetOnGasChangeFn(fn)
 	self.ongaschangefn = fn
 end

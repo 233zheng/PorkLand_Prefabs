@@ -176,6 +176,9 @@ local tuning = {
     --appeasementvalue
     WRATH_SMALL = -8,
     APPEASEMENT_TINY = 4,
+
+    GAS_DAMAGE_PER_INTERVAL = 5, -- the amount of health damage gas causes per interval
+    GAS_INTERVAL = 1, -- how frequently damage is applied
 }
 
 for key, value in pairs(tuning) do

@@ -2,6 +2,7 @@ local modimport = modimport
 
 -- Update this list when adding files
 local components_post = {
+    "health",
     "eater",
     "inventory",
     "inventoryitem",
@@ -12,7 +13,9 @@ local components_post = {
 }
 
 local prefabs_post = {
+    "player",
     "warningshadow",
+    "meatrack"
 }
 
 local batch_prefabs_post = {

@@ -125,7 +125,6 @@ function GlowflySpawner:setglowflyhatchtask(inst, time)
     end)
 end
 
-
 function GlowflySpawner:OnUpdate(dt)
 
 	local spawnerinst
@@ -135,8 +134,6 @@ function GlowflySpawner:OnUpdate(dt)
     else
     	spawnerinst = self.inst
     end
-
-	local season_percent = GetWorld().components.seasonmanager:GetPercentSeason()
 
     if spawnerinst then
 	--    print("GLOWFLY TIME",self.timetospawn, self.numglowflys,self.glowflycap)
@@ -167,8 +164,10 @@ function GlowflySpawner:OnUpdate(dt)
 		end
 	end
 
+	local season_percent = GetWorld().components.seasonmanager:GetPercentSeason()
 
 	-- if GetWorld().components.seasonmanager:IsTemperateSeason() and not self.nocycle then
+
         if TheWorld.state.isautumn and not self.nocycle then
 
 		if season_percent > 0.3 and season_percent <= 0.8 then
@@ -210,8 +209,6 @@ function GlowflySpawner:OnUpdate(dt)
 			self.glowflycap =  self.glowflycap_default
 		end
 	end
-
-
 end
 
 function GlowflySpawner:GetDebugString()

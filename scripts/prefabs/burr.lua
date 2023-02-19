@@ -126,7 +126,7 @@ local function fn()
     inst:AddComponent("deployable")
     inst.components.deployable.ondeploy = ondeploy
 
-    -- inst:WatchWorldState("season", OnSeasonChange)
+    inst:WatchWorldState("season", OnSeasonChange)
 
     inst.displaynamefn = displaynamefn
 

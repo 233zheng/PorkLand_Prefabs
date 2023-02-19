@@ -39,7 +39,8 @@ PrefabFiles = {
     "snakeskin_scaly",
     "grabbing_vine",
     "hanging_vine",
-    "tubertrees"
+    "tubertrees",
+    "flower_rainforest",
 }
 
 Assets = {
