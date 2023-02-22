@@ -53,7 +53,7 @@ local function fn()
     inst.AnimState:SetBank("flowers_rainforest")
     inst.AnimState:SetBuild("flowers_rainforest")
     inst.AnimState:PlayAnimation(inst.animname)
-    inst.AnimState:SetRayTestOnBB(true);
+    inst.AnimState:SetRayTestOnBB(true)
 
     inst:AddTag("cattoy")
     inst:AddTag("flower")

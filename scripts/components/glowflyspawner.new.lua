@@ -41,7 +41,7 @@ local spawndata = {
         -- 下一次生成时间
         nexttimetospawn = 10,
         nexttimetospawnBase = 10,
-        --
+        -- 默认下一次生成时间
         nexttimetospawn_default = 10,
         nexttimetospawnBase_default = 10,
         -- 下一次生成警告时间?
@@ -55,9 +55,13 @@ local spawndata = {
 
 -- 看不懂啥意思
 local glowflycapdata = {
+    -- 最多可生成四只
     glowflycap = 4,
+    -- 默认数量
     glowflycap_default = 4,
+    -- 
     glowflycap_warm = 10,
+    -- 冷却生成数量
     glowflycap_cold = 0
 }
 
@@ -66,15 +70,15 @@ local glowflycapdata = {
 --------------------------------------------------------------------------
 
 -- 获取玩家周围的可生成点
-local function GetSpawnPoint(inst)
+local function GetSpawnPoint(player)
 	local rad = 25
     local mindistance = 36
-	local x,y,z = inst.Transform:GetWorldPosition()
+	local x,y,z = player.Transform:GetWorldPosition()
     local MUST_TAGS = {'flower_rainforest'}
 	local flowers = TheSim:FindEntities(x,y,z, rad, MUST_TAGS)
 
     for i, v in ipairs(flowers) do
-        while v ~= nil and inst:GetDistanceSqToInst(v) <= mindistance do
+        while v ~= nil and player:GetDistanceSqToInst(v) <= mindistance do
             table.remove(flowers, i)
             v = flowers[i]
         end
@@ -110,7 +114,7 @@ local function SetGlowflyCocoontask(inst, time)
     end)
 end
 
--- 设置萤火虫卵孵化
+-- 设置萤火虫茧孵化
 local function SetGlowflyhatchtask(inst, time)
 	inst.glowflyhatchtask, inst.glowflyhatchtaskinfo = inst:ResumeTask(time, function()
         _world:PushEvent("glowflyhatch")
@@ -122,13 +126,13 @@ local function SpawnGlowflyForPlayer(player, reschedule)
     -- 获取玩家坐标
     local pt = player:GetPosition()
     -- 半径
-    local rad = 64
+    local radius = 64
     local glowfly = SpawnPrefab(prefab)
     local spawnflower = GetSpawnPoint(player)
     -- 获取半径64内带有glowfly标签的实体
-    local flowers = TheSim:FindEntities(pt.x, pt.y, pt.z, rad, {"glowfly"})
+    local glowflys = TheSim:FindEntities(pt.x, pt.y, pt.z, radius, {"glowfly"})
 
-    if #flowers < spawndata.glowflycap then
+    if #glowflys < spawndata.glowflycap then
         if spawnflower ~= nil then
             if glowfly.components.pollinator ~= nil then
                 glowfly.components.pollinator:Pollinate(spawnflower)
@@ -145,7 +149,7 @@ end
 
 -- 萤火虫结茧
 local function GlowflyCocoon()
-    -- 如果世界状态为秋天(繁茂季)
+    -- 如果世界状态为秋天(温和季)
     if _world.state.isautumn then
 		if _seasonprogress.isautumn > 0.3 and _seasonprogress.isautumn <= 0.8 then
 			-- the glowgly pop grows starting at 30% season time to 80% season time where it reaches the max.
@@ -162,7 +166,7 @@ local function GlowflyCocoon()
 			spawndata.timetospawn = math.min(spawndata.timetospawn, spawndata.nexttimetospawndata.nexttimetospawnBase+ math.random() * spawndata.nexttimetospawndata.nexttimetospawn )
             glowflycapdata.glowflycap = math.floor(glowflycapdata.glowflycap_default + ( diff_percent * (glowflycapdata.glowflycap_warm - glowflycapdata.glowflycap_default) )  )
 
-            -- 是谁这么傻？这样写print
+            -- 是谁这么傻？这样写print，为什么不用string.format呢？？
             print("nexttimetospawn：" .. spawndata.nexttimetospawndata.nexttimetospawn)
             print("nexttimetospawnBase：" .. spawndata.nexttimetospawndata.nexttimetospawnBase)
             print("timetospawn：" .. spawndata.timetospawn)
@@ -186,8 +190,9 @@ local function Glowflyhatch()
             SetGlowflyhatchtask(self.inst, 5)
         end
 
+        -- 如果当前最大可生成数等于冷却生成数
+        -- END GLOWFLY EXPLOSION
         if glowflycapdata.glowflycap ~= glowflycapdata.glowflycap_cold then
-            print("END GLOWFLY EXPLOSION")
             spawndata.nexttimetospawndata.nexttimetospawn = spawndata.nexttimetospawndata.nexttimetospawn_cold
             spawndata.nexttimetospawndata.nexttimetospawnBase = spawndata.nexttimetospawndata.nexttimetospawnBase_cold
             glowflycapdata.glowflycap = glowflycapdata.glowflycap_cold
@@ -202,11 +207,19 @@ local function Glowflyhatch()
     end
 end
 
+local function func(inst ,season)
+    if season == "autumn" then
+        GlowflyCocoon()    
+    elseif season == "summer" then
+        Glowflyhatch()
+    end
+end
+
 -- 计划在玩家周围生成
 local function ScheduleSpawn(player, initialspawn)
     if _scheduledtasks[player] == nil then
         local basedelay = initialspawn and 0.3 or 10
-        _scheduledtasks[player] = player:DoTaskInTime(basedelay + math.random() * 10, SpawnGlowflyForPlayer, ScheduleSpawn, GlowflyCocoon, Glowflyhatch)
+        _scheduledtasks[player] = player:DoTaskInTime(basedelay + math.random() * 10, SpawnGlowflyForPlayer, ScheduleSpawn)
     end
 end
 
@@ -291,11 +304,12 @@ end
 
 --Register events
 -- inst:WatchWorldState("isday", ToggleUpdate)
--- inst:WatchWorldState("iswinter", ToggleUpdate)
+inst:WatchWorldState("isautumn", GlowflyCocoon)
+inst:WatchWorldState("issummer", Glowflyhatch)
 inst:ListenForEvent("ms_playerjoined", OnPlayerJoined, TheWorld)
 inst:ListenForEvent("ms_playerleft", OnPlayerLeft, TheWorld)
 
-ToggleUpdate()
+ToggleUpdate(true)
 
 inst:StartUpdatingComponent(self)
 
@@ -303,9 +317,9 @@ inst:StartUpdatingComponent(self)
 --[[ Post initialization ]]
 --------------------------------------------------------------------------
 
-function self:OnPostInit()
-    ToggleUpdate(true)
-end
+-- function self:OnPostInit()
+--     ToggleUpdate(true)
+-- end
 
 --------------------------------------------------------------------------
 --[[ Public getters and setters ]]
@@ -395,7 +409,6 @@ end
 --------------------------------------------------------------------------
 
 function self:GetDebugString()
-    local numglowflys = 0
     for k, v in pairs(glowflys) do
         numglowflys = numglowflys + 1
     end
