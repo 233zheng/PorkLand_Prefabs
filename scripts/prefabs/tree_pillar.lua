@@ -1,4 +1,3 @@
-
 local prefabs = {
     "glowfly",
 }
@@ -8,20 +7,20 @@ local assets = {
 }
 
 -- 生成虫卵
-local function Spawncocoons(inst)
+local function Spawncocoons(inst, player)
     if math.random() < 0.4 then
         local pt = inst:GetPosition()
-        local range = 5 + math.random()*10
-        local angle =  math.random() * 2 * PI
-        local offset = FindWalkableOffset(pt,angle, range, 10)
+        local radius = 5 + math.random()*10
+        local start_angle =  math.random() * 2 * PI
+        local offset = FindWalkableOffset(pt, start_angle, radius, 10)
 
-        if offset then
+        if offset ~= nil then
             local newpoint = pt+offset
-            if GetPlayer():GetDistanceSqToPoint(newpoint) > 40*40 then
-                for i=1, math.random(6,10) do
-                    range = math.random()*8
-                    angle =  math.random() * 2 * PI
-                    local suboffset = FindWalkableOffset(newpoint,angle, range, 10)
+            if player:GetDistanceSqToPoint(newpoint) > 40 * 40 then
+                for i = 1, math.random(6,10) do
+                    radius = math.random()*8
+                    start_angle =  math.random() * 2 * PI
+                    local suboffset = FindWalkableOffset(newpoint,radius, start_angle, 10)
                     local cocoon = SpawnPrefab("glowfly")
                     local spawnpt = newpoint + suboffset
                     cocoon.Physics:Teleport(spawnpt.x,spawnpt.y,spawnpt.z)
@@ -63,7 +62,7 @@ local function fn()
     MakeObstaclePhysics(inst, 3, 24)
 
     inst.Transform:SetScale(1,1,1)
-	inst.MiniMapEntity:SetIcon( "pillar_tree.png" )
+	inst.MiniMapEntity:SetIcon("pillar_tree.png")
 
     -- THIS WAS COMMENTED OUT BECAUSE THE ROC WAS BUMPING INTO IT. BUT I'M NOT SURE WHY IT WAS SET THAT WAY TO BEGIN WITH.
     --inst.Physics:SetCollisionGroup(COLLISION.GROUND)
@@ -82,12 +81,14 @@ local function fn()
 
     inst:AddComponent("inspectable")
 
-    inst.spawncocoons = Spawncocoons
+    inst.Spawncocoons = Spawncocoons
 
    -- inst:DoTaskInTime(0,function() filterspawn(inst)  end)
 
     if TheWorld.components.glowflyspawner then
-        TheWorld:ListenForEvent("spawncocoons", function() Spawncocoons(inst) end)
+        TheWorld:ListenForEvent("spawncocoons", function() 
+            Spawncocoons(inst) 
+        end)
     end
 
    return inst
