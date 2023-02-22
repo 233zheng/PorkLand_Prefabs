@@ -168,7 +168,7 @@ function GlowflySpawner:OnUpdate(dt)
 
 	-- if GetWorld().components.seasonmanager:IsTemperateSeason() and not self.nocycle then
 
-        if TheWorld.state.isautumn and not self.nocycle then
+    if TheWorld.state.isautumn and not self.nocycle then
 
 		if season_percent > 0.3 and season_percent <= 0.8 then
 			-- the glowgly pop grows starting at 30% season time to 80% season time where it reaches the max.
