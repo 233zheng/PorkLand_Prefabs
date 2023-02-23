@@ -157,6 +157,10 @@ local tuning = {
     GLOWFLY_WALKSPEED = 6,
     GLOWFLY_RUNSPEED = 8,
 
+    DEFAULT_GLOWFLY = 4,
+    MAX_GLOWFLY = 10,
+    MIN_GLOWFLY = 0,
+
     JUNGLETREE_GROW_TIME =
     {
         {base=4.5*day_time, random=0.5*day_time},   --tall to short

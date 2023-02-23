@@ -16,7 +16,6 @@ self.inst = inst
 --Private
 local _world = TheWorld
 local _worldstate = _world.state
-local _ismastersim = _world.ismastersim
 local _seasonprogress = _worldstate.seasonprogress
 
 local _updating = false
@@ -30,40 +29,20 @@ local glowflys = {}
 
 local prefab = "glowfly"
 
-local spawndata = {
+local glowflydata = {
+    glowfly_amount = TUNIN.GDEFAULT_GLOWFLY,
 
-    timetospawn = 10,
+    glowfly_amount_default = TUNING.DEFAULT_GLOWFLY,
 
-    nexttimetospawndata = {
-        nexttimetospawn = 10,
-        nexttimetospawnBase = 10,
+    glowfly_amount_max = TUNING.MAX_GLOWFLY,
 
-        nexttimetospawn_default = 10,
-        nexttimetospawnBase_default = 10,
-
-        nexttimetospawn_warm = 2,
-        nexttimetospawnBase_warm = 0,
-
-        nexttimetospawn_cold = 50,
-        nexttimetospawnBase_cold = 50
-    }
-}
-
-local glowflycapdata = {
-    glowflycap = 4,
-
-    glowflycap_default = 4,
-
-    glowflycap_warm = 10,
-
-    glowflycap_cold = 0
+    glowfly_amount_min = TUNING.MIN_GLOWFLY
 }
 
 --------------------------------------------------------------------------
 --[[ Private member functions ]]
 --------------------------------------------------------------------------
 
--- 获取玩家周围的可生成点
 local function GetSpawnPoint(player)
 	local rad = 25
     local mindistance = 36
@@ -85,13 +64,8 @@ local function SetBugCocoonTimer(inst)
 	inst.SetCocoontask(inst)
 end
 
--- 开始结茧
 local function StartCocoonTimer()
-	print("开始结茧")
-	spawndata.nexttimetospawndata.nexttimetospawn = spawndata.nexttimetospawndata.nexttimetospawn_cold
-	spawndata.nexttimetospawndata.nexttimetospawnBase = spawndata.nexttimetospawndata.nexttimetospawnBase_cold
-	glowflycapdata.glowflycap = glowflycapdata.glowflycap_cold
-	spawndata.timetospawn = 0
+	glowflydata.glowfly_amount = glowflydata.glowfly_amount_min
 
 	for glowfly, i in pairs(glowflys) do
 		SetBugCocoonTimer(glowfly)
@@ -120,7 +94,7 @@ local function SpawnGlowflyForPlayer(player, reschedule)
     local spawnflower = GetSpawnPoint(player)
     local glowflys = TheSim:FindEntities(pt.x, pt.y, pt.z, radius, {"glowfly"})
 
-    if #glowflys < spawndata.glowflycap then
+    if #glowflys < glowflydata.glowfly_amount then
         if spawnflower ~= nil then
             if glowfly.components.pollinator ~= nil then
                 glowfly.components.pollinator:Pollinate(spawnflower)
@@ -136,23 +110,9 @@ local function SpawnGlowflyForPlayer(player, reschedule)
 end
 
 local function GlowflyCocoon()
-    if _seasonprogress.isautumn > 0.3 and _seasonprogress.isautumn <= 0.8 then
-        -- the glowgly pop grows starting at 30% season time to 80% season time where it reaches the max.
-        -- so basically it takes half the season to go from default to the humid season settings and reaches max 80% into the season.
-
-        _seasonprogress.isautumn = _seasonprogress.isautumn + 0.2
-
-        local diff_percent =  1 - math.sin(PI * _seasonprogress.isautumn)
-
-        spawndata.nexttimetospawndata.nexttimetospawn = math.floor(spawndata.nexttimetospawndata.nexttimetospawn_default + ( diff_percent * (spawndata.nexttimetospawndata.nexttimetospawn_warm - spawndata.nexttimetospawndata.nexttimetospawn_default) )  )
-        spawndata.nexttimetospawndata.nexttimetospawnBase = math.floor(spawndata.nexttimetospawndata.nexttimetospawnBase_default + ( diff_percent * (spawndata.nexttimetospawndata.nexttimetospawnBase_warm - spawndata.nexttimetospawndata.nexttimetospawnBase_default) )  )
-        spawndata.timetospawn = math.min(spawndata.timetospawn, spawndata.nexttimetospawndata.nexttimetospawnBase+ math.random() * spawndata.nexttimetospawndata.nexttimetospawn )
-        glowflycapdata.glowflycap = math.floor(glowflycapdata.glowflycap_default + ( diff_percent * (glowflycapdata.glowflycap_warm - glowflycapdata.glowflycap_default) )  )
-
-    elseif _seasonprogress.isautumn > 0.88 then
-
+    if _seasonprogress.isautumn > 0.88 then
         if not self.inst.glowflycocoontask then
-            SetGlowflyCocoontask(self.inst, 2* TUNING.SEG_TIME +   (math.random()*TUNING.SEG_TIME*2))
+            SetGlowflyCocoontask(self.inst, 2 * TUNING.SEG_TIME +   (math.random() * TUNING.SEG_TIME * 2))
         end
     end
 end
@@ -160,19 +120,6 @@ end
 local function Glowflyhatch()
     if not self.inst.glowflyhatchtask then
         SetGlowflyhatchtask(self.inst, 5)
-    end
-
-    if glowflycapdata.glowflycap ~= glowflycapdata.glowflycap_cold then
-        spawndata.nexttimetospawndata.nexttimetospawn = spawndata.nexttimetospawndata.nexttimetospawn_cold
-        spawndata.nexttimetospawndata.nexttimetospawnBase = spawndata.nexttimetospawndata.nexttimetospawnBase_cold
-        glowflycapdata.glowflycap = glowflycapdata.glowflycap_cold
-        spawndata.timetospawn = 0
-
-    elseif glowflycapdata.glowflycap ~= glowflycapdata.glowflycap_default then
-        print("恢复正常", glowflycapdata.glowflycap, glowflycapdata.glowflycap_default)
-        spawndata.nexttimetospawndata.nexttimetospawn =  spawndata.nexttimetospawndata.nexttimetospawn_default
-        spawndata.nexttimetospawndata.nexttimetospawnBase =  spawndata.nexttimetospawndata.nexttimetospawnBase_default
-        glowflycapdata.glowflycap = glowflycapdata.glowflycap_default
     end
 end
 
@@ -191,7 +138,7 @@ local function CancelSpawn(player)
 end
 
 local function ToggleUpdate(force)
-    if spawndata.glowflycap > 0 then
+    if glowflydata.glowfly_amount > 0 then
         if not _updating then
             _updating = true
             for k, v in ipairs(_activeplayers) do
@@ -323,10 +270,7 @@ end
 
 function self:OnSave()
 	local data ={
-		timetospawn = spawndata.timetospawn,
-		nexttimetospawn = spawndata.nexttimetospawndata.nexttimetospawn,
-		nexttimetospawnBase =  spawndata.nexttimetospawndata.nexttimetospawnBase,
-    	glowflycap = glowflycapdata.glowflycap,
+    	glowfly_amount = glowflydata.glowfly_amount,
 	}
 
 	if self.glowflycocoontask then
@@ -342,9 +286,7 @@ end
 
 function self:OnLoad(data)
     if data ~= nil then
-        spawndata.timetospawn = data.timetospawn or 10
-        spawndata.nexttimetospawndata.nexttimetospawn = data.nexttimetospawn or 10
-        glowflycapdata.glowflycap = data.glowflycap or 4
+        glowflydata.glowfly_amount = data.glowfly_amount or TUNING.DEFAULT_GLOWFLY
 
         if data.glowflycocoontask then
             SetGlowflyCocoontask(self.inst, data.glowflycocoontask)
