@@ -154,6 +154,9 @@ local tuning = {
     GRABBING_VINE_RANGE = 3,
     GRABBING_VINE_HITRANGE = 4,
 
+    GLOWFLY_WALKSPEED = 6,
+    GLOWFLY_RUNSPEED = 8,
+
     JUNGLETREE_GROW_TIME =
     {
         {base=4.5*day_time, random=0.5*day_time},   --tall to short

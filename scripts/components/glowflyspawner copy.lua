@@ -59,7 +59,7 @@ local glowflycapdata = {
     glowflycap = 4,
     -- 默认数量
     glowflycap_default = 4,
-    -- 
+    -- 看不懂啥意思
     glowflycap_warm = 10,
     -- 冷却生成数量
     glowflycap_cold = 0
@@ -149,69 +149,54 @@ end
 
 -- 萤火虫结茧
 local function GlowflyCocoon()
-    -- 如果世界状态为秋天(温和季)
-    if _world.state.isautumn then
-		if _seasonprogress.isautumn > 0.3 and _seasonprogress.isautumn <= 0.8 then
-			-- the glowgly pop grows starting at 30% season time to 80% season time where it reaches the max.
-			-- so basically it takes half the season to go from default to the humid season settings and reaches max 80% into the season.
-            -- 发光的pop从30%的季节时间开始增长到80%的季节时间，达到最大值。
-            -- 因此，基本上，从默认设置到潮湿的季节设置需要半个季节的时间，并且在该季节中达到最高80%。
+    if _seasonprogress.isautumn > 0.3 and _seasonprogress.isautumn <= 0.8 then
+        -- the glowgly pop grows starting at 30% season time to 80% season time where it reaches the max.
+        -- so basically it takes half the season to go from default to the humid season settings and reaches max 80% into the season.
+        -- 发光的pop从30%的季节时间开始增长到80%的季节时间，达到最大值。
+        -- 因此，基本上，从默认设置到潮湿季设置需要半个季节的时间，并且在该季节中达到最高80%。
 
-            _seasonprogress.isautumn = _seasonprogress.isautumn + 0.2
+        _seasonprogress.isautumn = _seasonprogress.isautumn + 0.2
 
-			local diff_percent =  1 - math.sin(PI * _seasonprogress.isautumn)
+        local diff_percent =  1 - math.sin(PI * _seasonprogress.isautumn)
 
-            spawndata.nexttimetospawndata.nexttimetospawn = math.floor(spawndata.nexttimetospawndata.nexttimetospawn_default + ( diff_percent * (spawndata.nexttimetospawndata.nexttimetospawn_warm - spawndata.nexttimetospawndata.nexttimetospawn_default) )  )
-			spawndata.nexttimetospawndata.nexttimetospawnBase = math.floor(spawndata.nexttimetospawndata.nexttimetospawnBase_default + ( diff_percent * (spawndata.nexttimetospawndata.nexttimetospawnBase_warm - spawndata.nexttimetospawndata.nexttimetospawnBase_default) )  )
-			spawndata.timetospawn = math.min(spawndata.timetospawn, spawndata.nexttimetospawndata.nexttimetospawnBase+ math.random() * spawndata.nexttimetospawndata.nexttimetospawn )
-            glowflycapdata.glowflycap = math.floor(glowflycapdata.glowflycap_default + ( diff_percent * (glowflycapdata.glowflycap_warm - glowflycapdata.glowflycap_default) )  )
+        spawndata.nexttimetospawndata.nexttimetospawn = math.floor(spawndata.nexttimetospawndata.nexttimetospawn_default + ( diff_percent * (spawndata.nexttimetospawndata.nexttimetospawn_warm - spawndata.nexttimetospawndata.nexttimetospawn_default) )  )
+        spawndata.nexttimetospawndata.nexttimetospawnBase = math.floor(spawndata.nexttimetospawndata.nexttimetospawnBase_default + ( diff_percent * (spawndata.nexttimetospawndata.nexttimetospawnBase_warm - spawndata.nexttimetospawndata.nexttimetospawnBase_default) )  )
+        spawndata.timetospawn = math.min(spawndata.timetospawn, spawndata.nexttimetospawndata.nexttimetospawnBase+ math.random() * spawndata.nexttimetospawndata.nexttimetospawn )
+        glowflycapdata.glowflycap = math.floor(glowflycapdata.glowflycap_default + ( diff_percent * (glowflycapdata.glowflycap_warm - glowflycapdata.glowflycap_default) )  )
 
-            -- 是谁这么傻？这样写print，为什么不用string.format呢？？
-            print("nexttimetospawn：" .. spawndata.nexttimetospawndata.nexttimetospawn)
-            print("nexttimetospawnBase：" .. spawndata.nexttimetospawndata.nexttimetospawnBase)
-            print("timetospawn：" .. spawndata.timetospawn)
-            print("glowflycap：" .. glowflycapdata.glowflycap)
+        -- 是谁这么傻？这样写print，为什么不用string.format呢？？
+        print("nexttimetospawn：" .. spawndata.nexttimetospawndata.nexttimetospawn)
+        print("nexttimetospawnBase：" .. spawndata.nexttimetospawndata.nexttimetospawnBase)
+        print("timetospawn：" .. spawndata.timetospawn)
+        print("glowflycap：" .. glowflycapdata.glowflycap)
 
-        elseif _seasonprogress.isautumn > 0.88 then
+    elseif _seasonprogress.isautumn > 0.88 then
 
-            if not self.inst.glowflycocoontask then
-                SetGlowflyCocoontask(self.inst, 2* TUNING.SEG_TIME +   (math.random()*TUNING.SEG_TIME*2))
-            end
+        if not self.inst.glowflycocoontask then
+            SetGlowflyCocoontask(self.inst, 2* TUNING.SEG_TIME +   (math.random()*TUNING.SEG_TIME*2))
         end
     end
 end
 
 -- 萤火虫结茧孵化
 local function Glowflyhatch()
-    -- 如果世界状态为夏天(繁茂季)
-    if _world.state.issummer then
+    if not self.inst.glowflyhatchtask then
+        SetGlowflyhatchtask(self.inst, 5)
+    end
 
-        if not self.inst.glowflyhatchtask then
-            SetGlowflyhatchtask(self.inst, 5)
-        end
-
-        -- 如果当前最大可生成数等于冷却生成数
-        -- END GLOWFLY EXPLOSION
-        if glowflycapdata.glowflycap ~= glowflycapdata.glowflycap_cold then
-            spawndata.nexttimetospawndata.nexttimetospawn = spawndata.nexttimetospawndata.nexttimetospawn_cold
-            spawndata.nexttimetospawndata.nexttimetospawnBase = spawndata.nexttimetospawndata.nexttimetospawnBase_cold
-            glowflycapdata.glowflycap = glowflycapdata.glowflycap_cold
-            spawndata.timetospawn = 0
-        end
+    -- 如果当前最大可生成数等于冷却生成数
+    -- END GLOWFLY EXPLOSION
+    if glowflycapdata.glowflycap ~= glowflycapdata.glowflycap_cold then
+        spawndata.nexttimetospawndata.nexttimetospawn = spawndata.nexttimetospawndata.nexttimetospawn_cold
+        spawndata.nexttimetospawndata.nexttimetospawnBase = spawndata.nexttimetospawndata.nexttimetospawnBase_cold
+        glowflycapdata.glowflycap = glowflycapdata.glowflycap_cold
+        spawndata.timetospawn = 0
 
     elseif glowflycapdata.glowflycap ~= glowflycapdata.glowflycap_default then
         print("恢复正常", glowflycapdata.glowflycap, glowflycapdata.glowflycap_default)
         spawndata.nexttimetospawndata.nexttimetospawn =  spawndata.nexttimetospawndata.nexttimetospawn_default
         spawndata.nexttimetospawndata.nexttimetospawnBase =  spawndata.nexttimetospawndata.nexttimetospawnBase_default
         glowflycapdata.glowflycap = glowflycapdata.glowflycap_default
-    end
-end
-
-local function func(inst ,season)
-    if season == "autumn" then
-        GlowflyCocoon()    
-    elseif season == "summer" then
-        Glowflyhatch()
     end
 end
 
@@ -303,8 +288,8 @@ for i, v in ipairs(AllPlayers) do
 end
 
 --Register events
--- inst:WatchWorldState("isday", ToggleUpdate)
-inst:WatchWorldState("isautumn", GlowflyCocoon)
+-- inst:WatchWorldState("isautumn", GlowflyCocoon)
+inst:WatchWorldState("iswinter", GlowflyCocoon)
 inst:WatchWorldState("issummer", Glowflyhatch)
 inst:ListenForEvent("ms_playerjoined", OnPlayerJoined, TheWorld)
 inst:ListenForEvent("ms_playerleft", OnPlayerLeft, TheWorld)
@@ -317,9 +302,10 @@ inst:StartUpdatingComponent(self)
 --[[ Post initialization ]]
 --------------------------------------------------------------------------
 
--- function self:OnPostInit()
---     ToggleUpdate(true)
--- end
+function self:OnPostInit()
+    ToggleUpdate(true)
+    print("Once")
+end
 
 --------------------------------------------------------------------------
 --[[ Public getters and setters ]]

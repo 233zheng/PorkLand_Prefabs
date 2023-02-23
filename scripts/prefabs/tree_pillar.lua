@@ -7,7 +7,7 @@ local assets = {
 }
 
 -- 生成虫卵
-local function Spawncocoons(inst, player)
+local function SpawnCocoons(inst, player)
     if math.random() < 0.4 then
         local pt = inst:GetPosition()
         local radius = 5 + math.random()*10
@@ -18,35 +18,14 @@ local function Spawncocoons(inst, player)
             local newpoint = pt+offset
             if player:GetDistanceSqToPoint(newpoint) > 40 * 40 then
                 for i = 1, math.random(6,10) do
-                    radius = math.random()*8
+                    radius = math.random() * 8
                     start_angle =  math.random() * 2 * PI
                     local suboffset = FindWalkableOffset(newpoint,radius, start_angle, 10)
-                    local cocoon = SpawnPrefab("glowfly")
+                    local cocoon = SpawnPrefab("glowfly_cocoon")
                     local spawnpt = newpoint + suboffset
                     cocoon.Physics:Teleport(spawnpt.x,spawnpt.y,spawnpt.z)
-                    cocoon:AddTag("cocoonspawn")
-                    cocoon.forceCocoon(cocoon)
                 end
             end
-        end
-    end
-end
-
-local function filterspawn(inst)
-
-    if not inst:HasTag("filtered") then
-        inst:AddTag("filtered")
-        local x,y,z = inst.Transform:GetWorldPosition()
-        local ents = TheSim:FindEntities(x,y,z, 20, {"tree_pillar"})
-
-        for i,ent in ipairs(ents)do
-            if ent == inst then
-                table.remove(ents,i)
-                break
-            end
-        end
-        if #ents > 0 then
-            inst:Remove()
         end
     end
 end
@@ -81,13 +60,12 @@ local function fn()
 
     inst:AddComponent("inspectable")
 
-    inst.Spawncocoons = Spawncocoons
+    inst.SpawnCocoons = SpawnCocoons
 
-   -- inst:DoTaskInTime(0,function() filterspawn(inst)  end)
-
-    if TheWorld.components.glowflyspawner then
-        TheWorld:ListenForEvent("spawncocoons", function() 
-            Spawncocoons(inst) 
+    inst.glowflyspawner = TheWorld.components.glowflyspawner
+    if inst.glowflyspawner ~= nil then
+        TheWorld:ListenForEvent("spawncocoons", function()
+            SpawnCocoons(inst, player)
         end)
     end
 

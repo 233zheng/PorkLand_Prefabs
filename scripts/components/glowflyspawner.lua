@@ -1,227 +1,332 @@
-local GlowflySpawner = Class(function(self, inst)
-    self.inst = inst
-    self.inst:StartUpdatingComponent(self)
-    -- glowflys
-    self.glowflys = {}
-    -- 生成时间
-    self.timetospawn = 10
-    -- 下一次生成时间
-    self.nexttimetospawn = 10
+--------------------------------------------------------------------------
+--[[ GlowflySpawner class definition ]]
+--------------------------------------------------------------------------
 
-    self.nexttimetospawnBase = 10
+return Class(function(self, inst)
 
-    self.glowflycap = 4
+assert(TheWorld.ismastersim, "GlowflySpawner should not exist on client")
 
-    self.nexttimetospawn_default = 10
+--------------------------------------------------------------------------
+--[[ Member variables ]]
+--------------------------------------------------------------------------1
 
-    self.nexttimetospawnBase_default = 10
+--Public
+self.inst = inst
 
-    self.glowflycap_default = 4
+--Private
+local _world = TheWorld
+local _worldstate = _world.state
+local _ismastersim = _world.ismastersim
+local _seasonprogress = _worldstate.seasonprogress
 
-    self.nexttimetospawn_warm = 2
+local _updating = false
 
-    self.nexttimetospawnBase_warm = 0
+local numglowflys = 0
 
-    self.glowflycap_warm = 10
+local _activeplayers = {}
+local _scheduledtasks = {}
 
-    self.nexttimetospawn_cold = 50
+local glowflys = {}
 
-    self.nexttimetospawnBase_cold = 50
+local prefab = "glowfly"
 
-    --
-    self.glowflycap_cold = 0
+local spawndata = {
 
-    -- 萤火虫数量
-    self.numglowflys = 0
+    timetospawn = 10,
 
-    -- 跟随玩家
-    self.followplayer = true
+    nexttimetospawndata = {
+        nexttimetospawn = 10,
+        nexttimetospawnBase = 10,
 
-    -- 生成物
-    self.prefab = "glowfly"
-end)
+        nexttimetospawn_default = 10,
+        nexttimetospawnBase_default = 10,
 
-function GlowflySpawner:Setglowfly(glowfly)
-    self.prefab = glowfly
-end
+        nexttimetospawn_warm = 2,
+        nexttimetospawnBase_warm = 0,
 
-function GlowflySpawner:GetSpawnPoint(spawnerinst)
+        nexttimetospawn_cold = 50,
+        nexttimetospawnBase_cold = 50
+    }
+}
+
+local glowflycapdata = {
+    glowflycap = 4,
+
+    glowflycap_default = 4,
+
+    glowflycap_warm = 10,
+
+    glowflycap_cold = 0
+}
+
+--------------------------------------------------------------------------
+--[[ Private member functions ]]
+--------------------------------------------------------------------------
+
+-- 获取玩家周围的可生成点
+local function GetSpawnPoint(player)
 	local rad = 25
-	local x,y,z = spawnerinst.Transform:GetWorldPosition()
-	local nearby_ents = TheSim:FindEntities(x,y,z, rad, {'flower_rainforest'})
-	local mindistance = 36
-	local validflowers = {}
-	for k,flower in ipairs(nearby_ents) do
-		if flower and
-		spawnerinst:GetDistanceSqToInst(flower) > mindistance then
-			table.insert(validflowers, flower)
-		end
-	end
+    local mindistance = 36
+	local x,y,z = player.Transform:GetWorldPosition()
+    local MUST_TAGS = {'flower_rainforest'}
+	local flowers = TheSim:FindEntities(x,y,z, rad, MUST_TAGS)
 
-	if #validflowers > 0 then
-		local f = validflowers[math.random(1, #validflowers)]
-		return f
-	else
-		return nil
-	end
-end
-
-function GlowflySpawner:StartTracking(inst)
-    inst.persists = false
-    if not inst.components.homeseeker then
-	    inst:AddComponent("homeseeker")
-	end
-
-	self.glowflys[inst] = function()
-	    if self.glowflys[inst] then
-	        inst:Remove()
-	    end
-	end
-
-	self.inst:ListenForEvent("entitysleep", self.glowflys[inst], inst)
-
-	self.numglowflys = self.numglowflys + 1
-end
-
-function GlowflySpawner:StopTracking(inst)
-    inst.persists = true
-	inst:RemoveComponent("homeseeker")
-	if self.glowflys[inst] then
-		self.inst:RemoveEventCallback("entitysleep", self.glowflys[inst], inst)
-		self.glowflys[inst] = nil
-		self.numglowflys = self.numglowflys - 1
-	end
-end
-
-function GlowflySpawner:setBugCocoonTimer(inst)
-	inst.setcocoontask(inst) --cocoon_task = inst:DoTaskInTime(math.random()*3, function() inst.begincocoonstage(inst) end ) --+ (math.random()*TUNING.SEG_TIME*2)
-end
-
-function GlowflySpawner:startCocoonTimer()
-	print("END GLOWFLY EXPLOSION, START COCOONING")
-	self.nexttimetospawn = self.nexttimetospawn_cold
-	self.nexttimetospawnBase = self.nexttimetospawnBase_cold
-	self.glowflycap = self.glowflycap_cold
-	self.timetospawn = 0
-
-	for glowfly,i in pairs(self.glowflys) do
-		self:setBugCocoonTimer(glowfly)
-	end
-
-	TheWorld:PushEvent("spawncocoons")
-	-- seed the map with many more cocoons.
-
-end
-
-function GlowflySpawner:setglowflycocoontask(inst, time)
-	inst.glowflycocoontask, inst.glowflycocoontaskinfo = inst:ResumeTask(time, function()
-        self:startCocoonTimer()
-    end)
-end
-
-function GlowflySpawner:setglowflyhatchtask(inst, time)
-	inst.glowflyhatchtask, inst.glowflyhatchtaskinfo = inst:ResumeTask(time, function()
-        TheWorld:PushEvent("glowflyhatch")
-    end)
-end
-
-function GlowflySpawner:OnUpdate(dt)
-
-	local spawnerinst
-
-    if self.followplayer then
-    	spawnerinst = GetPlayer()
-    else
-    	spawnerinst = self.inst
+    for i, v in ipairs(flowers) do
+        while v ~= nil and player:GetDistanceSqToInst(v) <= mindistance do
+            table.remove(flowers, i)
+            v = flowers[i]
+        end
     end
 
-    if spawnerinst then
-	--    print("GLOWFLY TIME",self.timetospawn, self.numglowflys,self.glowflycap)
-		if self.timetospawn > 0 then
-			self.timetospawn = self.timetospawn - dt
-		end
-
-		if spawnerinst and self.prefab then
-			if self.timetospawn <= 0 then
-
-				local spawnFlower = self:GetSpawnPoint(spawnerinst)
-
-				if spawnFlower and self.numglowflys < self.glowflycap then
-					local glowfly = SpawnPrefab(self.prefab)
-					local spawn_point = Vector3(spawnFlower.Transform:GetWorldPosition() )
-					glowfly.Physics:Teleport(spawn_point.x,spawn_point.y,spawn_point.z)
-					glowfly.components.pollinator:Pollinate(spawnFlower)
-					self:StartTracking(glowfly)
-					glowfly.components.homeseeker:SetHome(spawnFlower)
-					glowfly.OnBorn(glowfly)
-				end
-				if self.followplayer then
-					self.timetospawn = self.nexttimetospawnBase + math.random()*self.nexttimetospawn
-				else
-					self.timetospawn = math.random()
-				end
-			end
-		end
-	end
-
-	local season_percent = GetWorld().components.seasonmanager:GetPercentSeason()
-
-	-- if GetWorld().components.seasonmanager:IsTemperateSeason() and not self.nocycle then
-
-    if TheWorld.state.isautumn and not self.nocycle then
-
-		if season_percent > 0.3 and season_percent <= 0.8 then
-			-- the glowgly pop grows starting at 30% season time to 80% season time where it reaches the max.
-			-- so basically it takes half the season to go from default to the humid season settings and reaches max 80% into the season.
-			season_percent = season_percent + 0.2
-			local diff_percent =  1-math.sin(PI*season_percent)
-			self.nexttimetospawn = math.floor(self.nexttimetospawn_default + ( diff_percent * (self.nexttimetospawn_warm - self.nexttimetospawn_default) )  )
-			self.nexttimetospawnBase = math.floor(self.nexttimetospawnBase_default + ( diff_percent * (self.nexttimetospawnBase_warm - self.nexttimetospawnBase_default) )  )
-			self.glowflycap = math.floor(self.glowflycap_default + ( diff_percent * (self.glowflycap_warm - self.glowflycap_default) )  )
-			self.timetospawn = math.min(self.timetospawn, self.nexttimetospawnBase+ math.random()*self.nexttimetospawn )
-
-		elseif season_percent > 0.88 then
-
-			if not self.inst.glowflycocoontask then
-
-				--self.inst.glowflycocoontask, self.inst.glowflycocoontaskinfo = self.inst:ResumeTask(2* TUNING.SEG_TIME +   (math.random()*TUNING.SEG_TIME*2), function() self:startCocoonTimer() end)
-				self:setglowflycocoontask(self.inst, 2* TUNING.SEG_TIME +   (math.random()*TUNING.SEG_TIME*2))
-			end
-		end
-	else
-		if TheWorld.state.issummer and not self.nocycle then
-
-			if not self.inst.glowflyhatchtask then
-				--self.inst.glowflyhatchtask, self.inst.glowflyhatchtaskinfo = self.inst:ResumeTask(, function() GetWorld():PushEvent("glowflyhatch") end)
-				self:setglowflyhatchtask(self.inst, 5)
-			end
-			if self.glowflycap ~= self.glowflycap_cold then
-				print("END GLOWFLY EXPLOSION")
-				self.nexttimetospawn = self.nexttimetospawn_cold
-				self.nexttimetospawnBase = self.nexttimetospawnBase_cold
-				self.glowflycap = self.glowflycap_cold
-				self.timetospawn = 0
-			end
-		elseif self.glowflycap ~= self.glowflycap_default then
-			print("GLOWFLIES RETURN TO NORMAL")
-			self.nexttimetospawn =  self.nexttimetospawn_default
-			self.nexttimetospawnBase =  self.nexttimetospawnBase_default
-			self.glowflycap =  self.glowflycap_default
-		end
-	end
+    return next(flowers) ~= nil and flowers[math.random(1, #flowers)] or nil
 end
 
-function GlowflySpawner:GetDebugString()
-	return "Next spawn: "..tostring(self.timetospawn)
+local function SetBugCocoonTimer(inst)
+	inst.SetCocoontask(inst)
 end
 
-function GlowflySpawner:OnSave()
+-- 开始结茧
+local function StartCocoonTimer()
+	print("开始结茧")
+	spawndata.nexttimetospawndata.nexttimetospawn = spawndata.nexttimetospawndata.nexttimetospawn_cold
+	spawndata.nexttimetospawndata.nexttimetospawnBase = spawndata.nexttimetospawndata.nexttimetospawnBase_cold
+	glowflycapdata.glowflycap = glowflycapdata.glowflycap_cold
+	spawndata.timetospawn = 0
+
+	for glowfly, i in pairs(glowflys) do
+		SetBugCocoonTimer(glowfly)
+	end
+
+    -- seed the map with many more cocoons.
+    _world:PushEvent("spawncocoons")
+end
+
+local function SetGlowflyCocoontask(inst, time)
+	inst.glowflycocoontask, inst.glowflycocoontaskinfo = inst:ResumeTask(time, function()
+        StartCocoonTimer()
+    end)
+end
+
+local function SetGlowflyhatchtask(inst, time)
+	inst.glowflyhatchtask, inst.glowflyhatchtaskinfo = inst:ResumeTask(time, function()
+        _world:PushEvent("glowflyhatch")
+    end)
+end
+
+local function SpawnGlowflyForPlayer(player, reschedule)
+    local pt = player:GetPosition()
+    local radius = 64
+    local glowfly = SpawnPrefab(prefab)
+    local spawnflower = GetSpawnPoint(player)
+    local glowflys = TheSim:FindEntities(pt.x, pt.y, pt.z, radius, {"glowfly"})
+
+    if #glowflys < spawndata.glowflycap then
+        if spawnflower ~= nil then
+            if glowfly.components.pollinator ~= nil then
+                glowfly.components.pollinator:Pollinate(spawnflower)
+            end
+        end
+        glowfly.components.homeseeker:SetHome(spawnflower)
+        glowfly.Physics:Teleport(spawnflower.Transform:GetWorldPosition())
+        glowfly.OnBorn(glowfly)
+    end
+
+    _scheduledtasks[player] = nil
+    reschedule(player)
+end
+
+local function GlowflyCocoon()
+    if _seasonprogress.isautumn > 0.3 and _seasonprogress.isautumn <= 0.8 then
+        -- the glowgly pop grows starting at 30% season time to 80% season time where it reaches the max.
+        -- so basically it takes half the season to go from default to the humid season settings and reaches max 80% into the season.
+
+        _seasonprogress.isautumn = _seasonprogress.isautumn + 0.2
+
+        local diff_percent =  1 - math.sin(PI * _seasonprogress.isautumn)
+
+        spawndata.nexttimetospawndata.nexttimetospawn = math.floor(spawndata.nexttimetospawndata.nexttimetospawn_default + ( diff_percent * (spawndata.nexttimetospawndata.nexttimetospawn_warm - spawndata.nexttimetospawndata.nexttimetospawn_default) )  )
+        spawndata.nexttimetospawndata.nexttimetospawnBase = math.floor(spawndata.nexttimetospawndata.nexttimetospawnBase_default + ( diff_percent * (spawndata.nexttimetospawndata.nexttimetospawnBase_warm - spawndata.nexttimetospawndata.nexttimetospawnBase_default) )  )
+        spawndata.timetospawn = math.min(spawndata.timetospawn, spawndata.nexttimetospawndata.nexttimetospawnBase+ math.random() * spawndata.nexttimetospawndata.nexttimetospawn )
+        glowflycapdata.glowflycap = math.floor(glowflycapdata.glowflycap_default + ( diff_percent * (glowflycapdata.glowflycap_warm - glowflycapdata.glowflycap_default) )  )
+
+    elseif _seasonprogress.isautumn > 0.88 then
+
+        if not self.inst.glowflycocoontask then
+            SetGlowflyCocoontask(self.inst, 2* TUNING.SEG_TIME +   (math.random()*TUNING.SEG_TIME*2))
+        end
+    end
+end
+
+local function Glowflyhatch()
+    if not self.inst.glowflyhatchtask then
+        SetGlowflyhatchtask(self.inst, 5)
+    end
+
+    if glowflycapdata.glowflycap ~= glowflycapdata.glowflycap_cold then
+        spawndata.nexttimetospawndata.nexttimetospawn = spawndata.nexttimetospawndata.nexttimetospawn_cold
+        spawndata.nexttimetospawndata.nexttimetospawnBase = spawndata.nexttimetospawndata.nexttimetospawnBase_cold
+        glowflycapdata.glowflycap = glowflycapdata.glowflycap_cold
+        spawndata.timetospawn = 0
+
+    elseif glowflycapdata.glowflycap ~= glowflycapdata.glowflycap_default then
+        print("恢复正常", glowflycapdata.glowflycap, glowflycapdata.glowflycap_default)
+        spawndata.nexttimetospawndata.nexttimetospawn =  spawndata.nexttimetospawndata.nexttimetospawn_default
+        spawndata.nexttimetospawndata.nexttimetospawnBase =  spawndata.nexttimetospawndata.nexttimetospawnBase_default
+        glowflycapdata.glowflycap = glowflycapdata.glowflycap_default
+    end
+end
+
+local function ScheduleSpawn(player, initialspawn)
+    if _scheduledtasks[player] == nil then
+        local basedelay = initialspawn and 0.3 or 10
+        _scheduledtasks[player] = player:DoTaskInTime(basedelay + math.random() * 10, SpawnGlowflyForPlayer, ScheduleSpawn)
+    end
+end
+
+local function CancelSpawn(player)
+    if _scheduledtasks[player] ~= nil then
+        _scheduledtasks[player]:Cancel()
+        _scheduledtasks[player] = nil
+    end
+end
+
+local function ToggleUpdate(force)
+    if spawndata.glowflycap > 0 then
+        if not _updating then
+            _updating = true
+            for k, v in ipairs(_activeplayers) do
+                ScheduleSpawn(v, true)
+            end
+        elseif force then
+            for k, v in ipairs(_activeplayers) do
+                CancelSpawn(v)
+                ScheduleSpawn(v, true)
+            end
+        end
+    elseif _updating then
+        _updating = true
+        for k, v in ipairs(_activeplayers) do
+            CancelSpawn(v)
+        end
+    end
+end
+
+local function AutoRemoveTarget(inst, target)
+    if glowflys[target] ~= nil and target:IsAsleep() then
+        target:Remove()
+    end
+end
+
+--------------------------------------------------------------------------
+--[[ Private event handlers ]]
+--------------------------------------------------------------------------
+
+local function OnGlowflySleep(target)
+    inst:DoTaskInTime(0, AutoRemoveTarget, target)
+end
+
+local function OnPlayerJoined(src, player)
+    for i, v in ipairs(_activeplayers) do
+        if v == player then
+            return
+        end
+    end
+    table.insert(_activeplayers, player)
+    if _updating then
+        ScheduleSpawn(player, true)
+    end
+end
+
+local function OnPlayerLeft(src, player)
+    for i, v in ipairs(_activeplayers) do
+        if v == player then
+            CancelSpawn(player)
+            table.remove(_activeplayers, i)
+            return
+        end
+    end
+end
+
+--------------------------------------------------------------------------
+--[[ Initialization ]]
+--------------------------------------------------------------------------
+
+--Initialize variables
+for i, v in ipairs(AllPlayers) do
+    table.insert(_activeplayers, v)
+end
+
+--Register events
+-- inst:WatchWorldState("isautumn", GlowflyCocoon)
+inst:WatchWorldState("iswinter", GlowflyCocoon)
+inst:WatchWorldState("issummer", Glowflyhatch)
+inst:ListenForEvent("ms_playerjoined", OnPlayerJoined, TheWorld)
+inst:ListenForEvent("ms_playerleft", OnPlayerLeft, TheWorld)
+
+ToggleUpdate(true)
+
+inst:StartUpdatingComponent(self)
+
+--------------------------------------------------------------------------
+--[[ Post initialization ]]
+--------------------------------------------------------------------------
+
+function self:OnPostInit()
+    ToggleUpdate(true)
+end
+
+--------------------------------------------------------------------------
+--[[ Public getters and setters ]]
+--------------------------------------------------------------------------
+
+function self:Setglowfly(prefab)
+    prefab = prefab
+end
+
+function self:StartTrackingFn(inst)
+    if glowflys[inst] == nil then
+        local restore = inst.persists and 1 or 0
+        inst.persists = false
+        if inst.components.homeseeker == nil then
+            inst:AddComponent("homeseeker")
+        else
+            restore = restore + 2
+        end
+        glowflys[inst] = restore
+        inst:ListenForEvent("entitysleep", OnGlowflySleep, inst)
+    end
+end
+
+function self:StartTracking(glowfly)
+    self:StartTrackingFn(glowfly)
+end
+
+function self:StopTrackingFn(inst)
+    local restore = glowflys[inst]
+    if restore ~= nil then
+        inst.persists = restore == 1 or restore == 3
+        if restore < 2 then
+            inst:RemoveComponent("homeseeker")
+        end
+        glowflys[inst] = nil
+        inst:RemoveEventCallback("entitysleep", OnGlowflySleep, inst)
+    end
+end
+
+function self:StopTracking(glowfly)
+    self:StopTrackingFn(glowfly)
+end
+
+--------------------------------------------------------------------------
+--[[ Save/Load ]]
+--------------------------------------------------------------------------
+
+function self:OnSave()
 	local data ={
-		timetospawn = self.timetospawn,
-		nexttimetospawn = self.nexttimetospawn,
-		nexttimetospawnBase =  self.nexttimetospawnBase,
-    	glowflycap = self.glowflycap,
-    	nocycle = self.nocycle,
+		timetospawn = spawndata.timetospawn,
+		nexttimetospawn = spawndata.nexttimetospawndata.nexttimetospawn,
+		nexttimetospawnBase =  spawndata.nexttimetospawndata.nexttimetospawnBase,
+    	glowflycap = glowflycapdata.glowflycap,
 	}
 
 	if self.glowflycocoontask then
@@ -235,80 +340,37 @@ function GlowflySpawner:OnSave()
 	return data
 end
 
-function GlowflySpawner:OnLoad(data)
-	self.nocycle = data.nocycle
-	self.timetospawn = data.timetospawn or 10
-	self.nexttimetospawn = data.nexttimetospawn or 10
-	self.glowflycap = data.glowflycap or 4
-	if data.glowflycocoontask then
-		self:setglowflycocoontask(self.inst, data.glowflycocoontask)
-	end
-	if data.glowflyhatchtask then
-		self:setglowflyhatchtask(self.inst, data.glowflyhatchtask)
-	end
+function self:OnLoad(data)
+    if data ~= nil then
+        spawndata.timetospawn = data.timetospawn or 10
+        spawndata.nexttimetospawndata.nexttimetospawn = data.nexttimetospawn or 10
+        glowflycapdata.glowflycap = data.glowflycap or 4
+
+        if data.glowflycocoontask then
+            SetGlowflyCocoontask(self.inst, data.glowflycocoontask)
+        end
+
+        if data.glowflyhatchtask then
+            SetGlowflyhatchtask(self.inst, data.glowflyhatchtask)
+        end
+    end
+
+    ToggleUpdate(true)
 end
 
-function GlowflySpawner:SpawnModeNever()
-	self.timetospawn = -1
-	self.nexttimetospawn = 10
-    self.glowflycap = 0
-    self.inst:StopUpdatingComponent(self)
+--------------------------------------------------------------------------
+--[[ Debug ]]
+--------------------------------------------------------------------------
+
+function self:GetDebugString()
+    for k, v in pairs(glowflys) do
+        numglowflys = numglowflys + 1
+    end
+    return string.format("updating:%s numglowflys:%d/%d", tostring(_updating), numglowflys, numglowflys)
 end
 
-function GlowflySpawner:SpawnModeVeryHeavy()
-	self.timetospawn = 2
-	self.nexttimetospawn = 0
-    self.glowflycap = 10
+--------------------------------------------------------------------------
+--[[ End ]]
+--------------------------------------------------------------------------
 
-    self.nexttimetospawn_default = 2
-    self.nexttimetospawnBase_default = 0
-    self.glowflycap_default = 10
-
-    self.nexttimetospawn_warm = 2
-    self.nexttimetospawnBase_warm = 0
-    self.glowflycap_warm = 20
-end
-
-function GlowflySpawner:SpawnModeHeavy()
-	self.timetospawn = 5
-	self.nexttimetospawn = 5
-    self.glowflycap = 7
-
-    self.nexttimetospawn_default = 5
-    self.nexttimetospawnBase_default = 5
-    self.glowflycap_default = 7
-
-    self.nexttimetospawn_warm = 2
-    self.nexttimetospawnBase_warm = 0
-    self.glowflycap_warm = 14
-end
-
-function GlowflySpawner:SpawnModeMed()
-	self.timetospawn = 10
-	self.nexttimetospawn = 10
-    self.glowflycap = 4
-
-    self.nexttimetospawn_default = 10
-    self.nexttimetospawnBase_default = 10
-    self.glowflycap_default = 4
-
-    self.nexttimetospawn_warm = 2
-    self.nexttimetospawnBase_warm = 0
-    self.glowflycap_warm = 10
-end
-
-function GlowflySpawner:SpawnModeLight()
-	self.timetospawn = 15
-	self.nexttimetospawn = 15
-    self.glowflycap = 2
-
-    self.nexttimetospawn_default = 15
-    self.nexttimetospawnBase_default = 15
-    self.glowflycap_default = 2
-
-    self.nexttimetospawn_warm = 5
-    self.nexttimetospawnBase_warm = 2
-    self.glowflycap_warm = 8
-end
-
-return GlowflySpawner
+end)
