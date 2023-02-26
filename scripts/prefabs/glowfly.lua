@@ -10,7 +10,7 @@ local prefabs = {
 	"mosquitosack_yellow",
 }
 
-local brain = require("brains/glowflybrain")
+local brain = require("brains/mosquitobrain")
 
 local sounds = {
 	takeoff = "dontstarve/creatures/mosquito/mosquito_takeoff",
@@ -110,11 +110,11 @@ local function OnBorn(inst)
 	inst.components.fader:Fade(0, INTENSITY, .75+math.random()*1, function(v) inst.Light:SetIntensity(v) end)
 end
 
-local function CheckRemoveGlowfly(inst, player)
-	if not inst:HasTag("cocoonspawn") and inst:GetDistanceSqToInst(player) > 30*30 and not inst.components.inventoryitem:IsHeld() then
-		inst:Remove()
-	end
-end
+-- local function CheckRemoveGlowfly(inst, player)
+-- 	if not inst:HasTag("cocoonspawn") and inst:GetDistanceSqToInst(player) > 30*30 and not inst.components.inventoryitem:IsHeld() then
+-- 		inst:Remove()
+-- 	end
+-- end
 
 local function OnRemoveEntity(inst)
     if inst.glowflyspawner ~= nil then
@@ -404,7 +404,7 @@ local function commonfn()
 	inst.OnLoad = OnLoad
 
 	inst:DoTaskInTime(0, UpdateLight)
-	inst:DoPeriodicTask(5, CheckRemoveGlowfly, math.random() * 5)
+	-- inst:DoPeriodicTask(5, CheckRemoveGlowfly, math.random() * 5)
 
     MakePoisonableCharacter(inst)
 
@@ -417,5 +417,5 @@ local function cocoonfn()
     return inst
 end
 
-return Prefab("glowfly", commonfn, assets, prefabs),
-        Prefab("glowfly_cocoon", cocoonfn, assets, prefabs)
+return Prefab("glowfly", commonfn, assets, prefabs)
+        -- Prefab("glowfly_cocoon", cocoonfn, assets, prefabs)

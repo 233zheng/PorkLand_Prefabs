@@ -41,6 +41,8 @@ PrefabFiles = {
     "hanging_vine",
     "tubertrees",
     "flower_rainforest",
+    "glowfly",
+    "tree_pillar",
 }
 
 Assets = {
