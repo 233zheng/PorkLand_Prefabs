@@ -30,7 +30,7 @@ local glowflys = {}
 local prefab = "glowfly"
 
 local glowflydata = {
-    glowfly_amount = TUNIN.GDEFAULT_GLOWFLY,
+    glowfly_amount = TUNING.GDEFAULT_GLOWFLY,
 
     glowfly_amount_default = TUNING.DEFAULT_GLOWFLY,
 
