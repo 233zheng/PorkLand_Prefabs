@@ -35,9 +35,9 @@ end
 
 local function ShouldSleep(inst)
     return not TheWorld.state.isday
-    and not (inst.components.combat and inst.components.combat.target)
-    and not (inst.components.burnable and inst.components.burnable:IsBurning() )
-    and (not inst.components.homeseeker or inst:IsNear(inst.components.homeseeker.home, SLEEP_NEAR_HOME_DISTANCE))
+    and not (inst.components.combat ~= nil and inst.components.combat.target)
+    and not (inst.components.burnable ~= nil and inst.components.burnable:IsBurning() )
+    and (not inst.components.homeseeker ~= nil or inst:IsNear(inst.components.homeseeker.home, SLEEP_NEAR_HOME_DISTANCE))
 end
 
 local function OnNewTarget(inst, data)
@@ -83,7 +83,7 @@ end
 
 local function DoReturn(inst)
     --print("DoReturn", inst)
-    if inst.components.homeseeker and inst.components.homeseeker:HasHome()  then
+    if inst.components.homeseeker ~= nil and inst.components.homeseeker:HasHome()  then
         if inst.components.homeseeker.home.components.childspawner then
             inst.components.homeseeker.home.components.childspawner:GoHome(inst)
         end

@@ -5,7 +5,7 @@ local assets =
 	Asset("ANIM", "anim/ant_larva.zip"),
 }
 
-local function spawnant(inst)
+local function SpawnAnt(inst)
 	local ant = SpawnPrefab("antman")
 	local pt = inst:GetPosition():Get()
 	ant.Transform:SetPosition(pt.x, pt.y, pt.z)
@@ -41,12 +41,12 @@ local function fn()
 	inst.components.complexprojectile:SetOnHit(OnHit)
 	inst.components.complexprojectile.yOffset = 2.5
 
-	inst.SpawnAnt = spawnant
+	inst.SpawnAnt = SpawnAnt
 
 	inst:SetStateGraph("SGantlarva")
 
-    -- inst:AddComponent("hauntable")
-    -- inst.components.hauntable:SetHauntValue(TUNING.HAUNT_TINY)
+    inst:AddComponent("hauntable")
+    inst.components.hauntable:SetHauntValue(TUNING.HAUNT_TINY)
 
 	return inst
 end

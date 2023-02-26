@@ -31,18 +31,18 @@ local SHARE_TARGET_DIST = 30
 
 local function ShouldWakeUp(inst)
     return TheWorld.state.isnight
-    or (inst.components.combat and inst.components.combat.target)
-    or (inst.components.homeseeker and inst.components.homeseeker:HasHome() )
-    or (inst.components.burnable and inst.components.burnable:IsBurning() )
-    or (inst.components.follower and inst.components.follower.leader)
+    or (inst.components.combat ~= nil and inst.components.combat.target)
+    or (inst.components.homeseeker ~= nil and inst.components.homeseeker:HasHome() )
+    or (inst.components.burnable ~= nil and inst.components.burnable:IsBurning() )
+    or (inst.components.follower ~= nil and inst.components.follower.leader)
   end
 
   local function ShouldSleep(inst)
     return TheWorld.state.isday
-    and not (inst.components.combat and inst.components.combat.target)
-    and not (inst.components.homeseeker and inst.components.homeseeker:HasHome() )
-    and not (inst.components.burnable and inst.components.burnable:IsBurning() )
-    and not (inst.components.follower and inst.components.follower.leader)
+    and not (inst.components.combat ~= nil and inst.components.combat.target)
+    and not (inst.components.homeseeker ~= nil and inst.components.homeseeker:HasHome() )
+    and not (inst.components.burnable ~= nil and inst.components.burnable:IsBurning() )
+    and not (inst.components.follower ~= nil and inst.components.follower.leader)
   end
 
 local function OnNewTarget(inst, data)
@@ -73,7 +73,7 @@ local function OnAttackOther(inst, data)
 end
 
 local function DoReturn(inst)
-	if inst.components.homeseeker then
+	if inst.components.homeseeker ~= nil then
 		inst.components.homeseeker:ForceGoHome()
 	end
 end
@@ -99,18 +99,6 @@ local function OnExitWater(inst)
     inst.sg:GoToState("emerge")
     inst.DynamicShadow:Enable(false)
     inst.components.locomotor.walkspeed = 3
-end
-
-local function OnEntityWake(inst)
-	if inst.components.tiletracker then
-		inst.components.tiletracker:Start()
-	end
-end
-
-local function OnEntitySleep(inst)
-	if inst.components.tiletracker then
-		inst.components.tiletracker:Stop()
-	end
 end
 
 local function fn()
@@ -199,9 +187,6 @@ local function fn()
 	inst:SetBrain(brain)
 
 	inst.sounds = sounds.amphibious
-
-	inst.OnEntityWake = OnEntityWake
-	inst.OnEntitySleep = OnEntitySleep
 
 	inst:ListenForEvent("attacked", OnAttacked)
 	inst:ListenForEvent("onattackother", OnAttackOther)

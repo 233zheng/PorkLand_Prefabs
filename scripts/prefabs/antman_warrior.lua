@@ -29,10 +29,6 @@ local function CalcSanityAura(inst, observer)
     return -TUNING.SANITYAURA_LARGE
 end
 
-local function ontalk(inst, script)
-	inst.SoundEmitter:PlaySound("dontstarve_DLC003/creatures/crickant/abandon")
-end
-
 local function OnAttackedByDecidRoot(inst, attacker)
     local fn = function(dude) return dude:HasTag("antman") end
 
@@ -71,10 +67,6 @@ end
 
 local builds = {"antman_translucent_build"}-- {"antman_build"}
 
-local function is_complete_disguise(target)
-    return target:HasTag("has_antmask") and target:HasTag("has_antsuit")
-end
-
 local function NormalRetargetFn(inst)
     return FindEntity(inst, TUNING.ANTMAN_WARRIOR_TARGET_DIST, function(guy)
         if guy.components.health and not guy.components.health:IsDead() and inst.components.combat:CanTarget(guy) then
@@ -100,7 +92,7 @@ local function TransformToNormal(inst)
     inst:Remove()
 end
 
-local function onsave(inst,data)
+local function OnSave(inst,data)
     data.build = inst.build
 
     if inst.queen then
@@ -112,8 +104,8 @@ local function onsave(inst,data)
     end
 end
 
-local function onload(inst,data)
-    if data then
+local function OnLoad(inst,data)
+    if data ~= nil then
         inst.build = data.build or builds[1]
         inst.AnimState:SetBuild(inst.build)
     end
@@ -235,13 +227,6 @@ local function common()
     inst.components.lootdropper:AddRandomLoot("chitin", 1)
     inst.components.lootdropper.numrandomloot = 1
 
-    inst:AddComponent("talker")
-    inst.components.talker.ontalk = ontalk
-    inst.components.talker.fontsize = 35
-    inst.components.talker.font = TALKINGFONT
-    inst.components.talker.offset = Vector3(0, -400, 0)
-    inst.components.talker:StopIgnoringAll()
-
     inst:AddComponent("combat")
     inst.components.combat.hiteffectsymbol = "antman_torso"
     inst.components.combat.debris_immune = true
@@ -255,8 +240,8 @@ local function common()
     inst:SetBrain(brain)
     inst:SetStateGraph("SGwarriorant")
 
-    inst.OnSave = onsave
-    inst.OnLoad = onload
+    inst.OnSave = OnSave
+    inst.OnLoad = OnLoad
     inst.OnLoadPostPass = OnLoadPostPass
     inst.SetAporkalypse = SetAporkalypse
 
@@ -273,4 +258,4 @@ local function common()
     return inst
 end
 
-return Prefab("antman_warrior", common, assets)
+return Prefab("antman_warrior", common, assets, prefabs)

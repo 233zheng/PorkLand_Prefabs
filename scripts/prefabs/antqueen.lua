@@ -64,7 +64,7 @@ end
 
 local function WarriorKilled(inst)
     inst.warrior_count = inst.warrior_count - 1
-    if inst.warrior_count == 0 and inst.components.combat then
+    if inst.warrior_count == 0 and inst.components.combat ~= nil then
         inst.warrior_count = 0
     end
 end
@@ -130,15 +130,17 @@ local function OnDeath(inst)
     end)
 end
 
-local function onload(inst, data)
-    if data.currentstate then
-        inst.sg:GoToState(data.currentstate)
-    end
+local function OnLoad(inst, data)
+    if data ~= nil then
+        if data.currentstate then
+            inst.sg:GoToState(data.currentstate)
+        end
 
-    inst.warrior_count = data.warrior_count
+        inst.warrior_count = data.warrior_count
+    end
 end
 
-local function onsave(inst, data)
+local function OnSave(inst, data)
     data.currentstate = inst.sg.currentstate.name
     data.warrior_count = inst.warrior_count or 0
 end
@@ -217,8 +219,8 @@ local function fn()
     inst:ListenForEvent("attacked", OnAttacked)
     inst:ListenForEvent("death", OnDeath)
 
-    inst.OnSave = onsave
-    inst.OnLoad = onload
+    inst.OnSave = OnSave
+    inst.OnLoad = OnLoad
 
     return inst
 end

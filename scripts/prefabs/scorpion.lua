@@ -39,10 +39,10 @@ end
 
 local function keeptargetfn(inst, target)
    return target
-          and target.components.combat
-          and target.components.health
+          and target.components.combat ~= nil
+          and target.components.health ~= nil
           and not target.components.health:IsDead()
-          and not (inst.components.follower and inst.components.follower.leader == target)
+          and not (inst.components.follower ~= nil and inst.components.follower.leader == target)
 end
 
 local function ShouldSleep(inst)

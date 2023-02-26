@@ -10,7 +10,7 @@ local prefabs =
     "walkingstick",
 }
 
-local function flytrapstalk(inst)
+local function flytrapstalk()
 	local inst = CreateEntity()
 	inst.entity:AddTransform()
 	inst.entity:AddAnimState()

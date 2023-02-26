@@ -56,13 +56,6 @@ local function MakeAnims(stage)
     }
 end
 
--- dropleaves = "drop_leaves_"..stage,
--- growleaves = "grow_leaves_"..stage,
--- swayfx="swayfx_"..stage,
--- swayaggropre="sway_agro_pre",
--- swayaggro="sway_loop_agro",
--- swayaggropst="sway_agro_pst",
--- swayaggroloop="idle_loop_agro",
 
 local short_anims = MakeAnims("short")
 local tall_anims = MakeAnims("tall")

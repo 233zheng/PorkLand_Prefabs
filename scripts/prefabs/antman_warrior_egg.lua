@@ -9,7 +9,7 @@ local assets =
     Asset("ANIM", "anim/antman_translucent_build.zip"),
 }
 
-local function dohatch(inst, hatch_time)
+local function DoHatch(inst, hatch_time)
 	inst.updatetask = inst:DoTaskInTime(hatch_time, function()
 
 		if not inst.inlimbo then
@@ -47,7 +47,7 @@ local function dohatch(inst, hatch_time)
 	end)
 end
 
-local function ground_detection(inst)
+local function Ground_Detection(inst)
 	local pos = inst:GetPosition()
 
 	if pos.y <= 0.2 then
@@ -61,16 +61,16 @@ local function ground_detection(inst)
 			inst.updatetask = nil
 		end
 
-		dohatch(inst, math.random(2, 6))
+		DoHatch(inst, math.random(2, 6))
 	end
 end
 
-local function start_grounddetection(inst)
-	inst.updatetask = inst:DoPeriodicTask(FRAMES, ground_detection)
+local function Start_GroundDetection(inst)
+	inst.updatetask = inst:DoPeriodicTask(FRAMES, Ground_Detection)
 end
 
-local function onremove(inst)
-	TheWorld:RemoveEventCallback("doorused", inst.ondoorused)
+local function OnRemove(inst)
+	TheWorld:RemoveEventCallback("doorused", inst.OnDoorUsed)
 
 	if inst.updatetask then
 		inst.updatetask:Cancel()
@@ -82,7 +82,7 @@ local function OnHit(inst)
     if inst.components.health:IsDead() then
         inst.AnimState:PlayAnimation("break")
         inst.queen:WarriorKilled()
-        onremove(inst)
+        OnRemove(inst)
     elseif not inst.components.health:IsInvincible() then
         inst.AnimState:PlayAnimation("hit", false)
     end
@@ -94,18 +94,18 @@ local function animover(inst)
     end
 end
 
-local function ondoorused(inst, world , data)
+local function OnDoorUsed(inst, world , data)
     if data.from_door.components.door.target_interior == "FINAL_QUEEN_CHAMBER" then
-        dohatch(inst, math.random(2, 4))
+        DoHatch(inst, math.random(2, 4))
     else
-        onremove(inst)
+        OnRemove(inst)
     end
 end
 
 local function eggify(inst)
     inst.AnimState:PlayAnimation("eggify", false)
     inst.AnimState:PushAnimation("idle", false)
-    dohatch(inst, 1)
+    DoHatch(inst, 1)
 end
 
 local function OnSave(inst, data)
@@ -153,15 +153,15 @@ local function fn()
 	inst:AddComponent("combat")
 	inst.components.combat:SetOnHit(OnHit)
 
-	inst.ondoorused = ondoorused
-    inst.OnRemoveEntity = onremove
-	inst.start_grounddetection = start_grounddetection
+	inst.OnDoorUsed = OnDoorUsed
+    inst.OnRemoveEntity = OnRemove
+	inst.Start_GroundDetection = Start_GroundDetection
 	inst.eggify = eggify
 	inst.OnSave = OnSave
 	inst.OnLoadPostPass = OnLoadPostPass
 
     inst:ListenForEvent("animover", animover)
-	inst:ListenForEvent("doorused", inst.ondoorused)
+	inst:ListenForEvent("doorused", inst.OnDoorUsed)
 
     inst:AddComponent("hauntable")
     inst.components.hauntable:SetHauntValue(TUNING.HAUNT_TINY)

@@ -27,13 +27,13 @@ local SHARE_TARGET_DIST = TUNING.ADULT_FLYTRAP_DAMAGE/2
 
 local function OnNewTarget(inst, data)
 	inst.keeptargetevenifnofood = nil
-	if inst.components.sleeper and inst.components.sleeper:IsAsleep() then
+	if inst.components.sleeper ~= nil and inst.components.sleeper:IsAsleep() then
 		inst.components.sleeper:WakeUp()
 	end
 end
 
 local function findfood(inst,guy)
-	if guy.components.inventory then
+	if guy.components.inventory ~= nil then
 		return guy.components.inventory:FindItem(
 			function(item)
 				return inst.components.eater:CanEat(item)
@@ -76,7 +76,7 @@ local function OnAttackOther(inst, data)
 end
 
 local function DoReturn(inst)
-	if inst.components.homeseeker then
+	if inst.components.homeseeker ~= nil then
 		inst.components.homeseeker:ForceGoHome()
 	end
 end

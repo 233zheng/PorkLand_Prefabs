@@ -26,14 +26,8 @@ local function ondeploy(inst, pt, deployer)
     plant(inst, timeToGrow)
 end
 
-local function describe(inst)
-    if inst.growtime then
-        return "PLANTED"
-    end
-end
-
 local function OnLoad(inst, data)
-    if data and data.growtime then
+    if data ~= nil and data.growtime ~= nil then
         plant(inst, data.growtime)
     end
 end
@@ -76,7 +70,6 @@ local function fn()
 	inst.components.stackable.maxsize = TUNING.STACK_SIZE_SMALLITEM
 
     inst:AddComponent("inspectable")
-    inst.components.inspectable.getstatus = describe
 
     inst:AddComponent("deployable")
     -- inst.components.deployable:SetDeployMode(DEPLOYMODE.PLANT)
@@ -238,5 +231,5 @@ end
 
 return Prefab("teatree_nut", fn, assets, prefabs),
         Prefab("teatree_nut_sapling", saplingfn, assets, prefabs),
-       Prefab("teatree_nut_cooked", cooked, assets),
-	   MakePlacer( "teatree_nut_placer", "teatree_nut", "teatree_nut", "idle_planted" )
+        Prefab("teatree_nut_cooked", cooked, assets),
+	    MakePlacer( "teatree_nut_placer", "teatree_nut", "teatree_nut", "idle_planted" )

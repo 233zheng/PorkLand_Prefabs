@@ -31,17 +31,17 @@ local function SetEatType(inst,eattype)
     end
 end
 
-local function ontalk(inst, script)
+local function OnTalk(inst, script)
     -- 如果玩家完全伪装
-    if inst.is_complete_disguise(ThePlayer) then
-        inst.SoundEmitter:PlaySound("dontstarve_DLC003/creatures/crickant/pick_up")
-    else
+    -- if inst.is_complete_disguise(player) then
+        -- inst.SoundEmitter:PlaySound("dontstarve_DLC003/creatures/crickant/pick_up")
+    -- else
 	   inst.SoundEmitter:PlaySound("dontstarve_DLC003/creatures/crickant/abandon")
-    end
+    -- end
 end
 
 local function CalcSanityAura(inst, observer)
-    if inst.components.follower and inst.components.follower.leader == observer then
+    if inst.components.follower ~= nil and inst.components.follower.leader == observer then
         return TUNING.SANITYAURA_SMALL/2
     end
     return 0
@@ -52,10 +52,10 @@ local function ShouldAcceptItem(inst, item)
         return false
     end
 
-    if item.components.equippable and item.components.equippable.equipslot == EQUIPSLOTS.HEAD then
+    if item.components.equippable ~= nil and item.components.equippable.equipslot == EQUIPSLOTS.HEAD then
         return true
     end
-    if item.components.edible then
+    if item.components.edible ~= nil then
 
         if (item.components.edible.foodtype == "MEAT" or item.components.edible.foodtype == "HORRIBLE")
            and inst.components.follower.leader
@@ -80,13 +80,13 @@ end
 
 local function OnGetItemFromPlayer(inst, giver, item)
     --I eat food
-    if item.components.edible then
+    if item.components.edible ~= nil then
         --meat makes us friends
         if inst.components.eater:CanEat(item) then
       --  if item.components.edible.foodtype == "MEAT" or item.components.edible.foodtype == "HORRIBLE" then
             if inst.components.combat.target and inst.components.combat.target == giver then
                 inst.components.combat:SetTarget(nil)
-            elseif giver.components.leader then
+            elseif giver.components.leader ~= nil then
 				inst.SoundEmitter:PlaySound("dontstarve/common/makeFriend")
 				giver.components.leader:AddFollower(inst)
                 inst.components.follower:AddLoyaltyTime(item.components.edible:GetHunger() * TUNING.ANTMAN_LOYALTY_PER_HUNGER)
@@ -98,7 +98,7 @@ local function OnGetItemFromPlayer(inst, giver, item)
     end
 
     --I wear hats
-    if item.components.equippable and item.components.equippable.equipslot == EQUIPSLOTS.HEAD then
+    if item.components.equippable ~= nil and item.components.equippable.equipslot == EQUIPSLOTS.HEAD then
         local current = inst.components.inventory:GetEquippedItem(EQUIPSLOTS.HEAD)
         if current then
             inst.components.inventory:DropItem(current)
@@ -155,9 +155,6 @@ local function OnAttacked(inst, data)
     end
 end
 
-local function OnNewTarget(inst, data)
-end
-
 local builds = {"antman_translucent_build"}-- {"antman_build"}
 
 local function is_complete_disguise(target)
@@ -182,12 +179,12 @@ local function NormalKeepTargetFn(inst, target)
 end
 
 local function NormalShouldSleep(inst)
-    if inst.components.follower and inst.components.follower.leader then
+    if inst.components.follower ~= nil and inst.components.follower.leader then
         local fire = FindEntity( inst, 6,
             function(ent)
-                return ent.components.burnable and ent.components.burnable:IsBurning()
+                return ent.components.burnable ~= nil and ent.components.burnable:IsBurning()
             end,
-        {"campfire"} )
+        {"campfire"})
 
         return DefaultSleepTest(inst) and fire and (not inst.LightWatcher or inst.LightWatcher:IsInLight())
     else
@@ -209,7 +206,7 @@ local function TransformToWarrior(inst, from_limbo_or_asleep)
 end
 
 local function suggest_tree_target(inst,data)
-    if data and data.tree and inst:GetBufferedAction() ~= ACTIONS.CHOP then
+    if data ~= nil and data.tree and inst:GetBufferedAction() ~= ACTIONS.CHOP then
         inst.tree_target = data.tree
     end
 end
@@ -220,7 +217,7 @@ local function getstatus(inst)
     end
 end
 
-local function beginaporkalypse(inst)
+local function OnAporkalypse(inst)
     if not inst:IsInLimbo() then
         if inst:IsAsleep() then
             TransformToWarrior(inst, true)
@@ -353,12 +350,12 @@ local function common()
     inst.components.combat:SetRetargetFunction(3, NormalRetargetFn)
     inst.components.combat:SetTarget(nil)
 
-    -- inst:AddComponent("talker")
-    -- inst.components.talker.ontalk = ontalk
-    -- inst.components.talker.fontsize = 35
-    -- inst.components.talker.font = TALKINGFONT
-    -- inst.components.talker.offset = Vector3(0, -400, 0)
-    -- inst.components.talker:StopIgnoringAll()
+    inst:AddComponent("talker")
+    inst.components.talker.ontalk = OnTalk
+    inst.components.talker.fontsize = 35
+    inst.components.talker.font = TALKINGFONT
+    inst.components.talker.offset = Vector3(0, -400, 0)
+    inst.components.talker:StopIgnoringAll()
 
     local brain = require "brains/antbrain"
     inst:SetBrain(brain)
@@ -376,8 +373,7 @@ local function common()
 
     inst:ListenForEvent("suggest_tree_target", suggest_tree_target)
     inst:ListenForEvent("attacked", OnAttacked)
-    inst:ListenForEvent("newcombattarget", OnNewTarget)
-    inst:ListenForEvent("beginaporkalypse", beginaporkalypse , TheWorld)
+    inst:ListenForEvent("beginaporkalypse", OnAporkalypse , TheWorld)
     inst:ListenForEvent("exitlimbo", exitlimbo)
 
     CheckForAporkalypse(true)

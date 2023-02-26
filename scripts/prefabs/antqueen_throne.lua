@@ -65,7 +65,7 @@ local function OnWorkCallback(inst, worker, workleft)
     end
 end
 
-local function onremove(inst)
+local function OnRemove(inst)
     local x, y, z = inst.Transform:GetWorldPosition()
 
     local ents = TheSim:FindEntities(x,y,z, 10, {"throne_wall"})
@@ -118,7 +118,7 @@ local function fn()
 
 	-- inst:AddComponent("mystery")
 
-	inst:ListenForEvent("onremove", onremove, inst)
+	inst:ListenForEvent("onremove", OnRemove, inst)
 
     inst:AddComponent("hauntable")
     inst.components.hauntable:SetHauntValue(TUNING.HAUNT_TINY)

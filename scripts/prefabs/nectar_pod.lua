@@ -12,7 +12,7 @@ local function TransformToHoney(inst, antchest)
     antchest.components.container:RemoveItem(inst)
     local numNectarPods = 1
 
-    if inst.components.stackable and inst.components.stackable:IsStack() and inst.components.stackable:StackSize() > 1 then
+    if inst.components.stackable ~= nil and inst.components.stackable:IsStack() and inst.components.stackable:StackSize() > 1 then
         numNectarPods = inst.components.stackable:StackSize() + 1
     end
 

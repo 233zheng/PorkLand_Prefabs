@@ -29,7 +29,7 @@ local function OnAttacked(inst, data)
 	if inst.components.combat and not inst.components.combat.target then
 	--	inst.sg:GoToState("hiss")
 	end
-    if inst.components.combat then
+    if inst.components.combat ~= nil then
     	inst.components.combat:SetTarget(data.attacker)
     	inst.components.combat:ShareTarget(attacker, SHARE_TARGET_DIST, function(dude) return dude:HasTag("pog") end, MAX_TARGET_SHARES)
     end
@@ -38,17 +38,17 @@ end
 local function KeepTargetFn(inst, target)
 	if target:HasTag("pog") then
 		return (target
-	    	and target.components.combat
-	        and target.components.health
+	    	and target.components.combat ~= nil
+	        and target.components.health ~= nil
 	        and not target.components.health:IsDead()
-	        and not (inst.components.follower and target.components.follower and inst.components.follower.leader ~= nil and inst.components.follower.leader == target.components.follower.leader)
-	        and not (inst.components.follower and inst.components.follower.leader == target))
+	        and not (inst.components.follower ~= nil and target.components.follower ~= nil and inst.components.follower.leader ~= nil and inst.components.follower.leader == target.components.follower.leader)
+	        and not (inst.components.follower ~= nil and inst.components.follower.leader == target))
 	else
 	    return (target
-	    	and target.components.combat
-	        and target.components.health
+	    	and target.components.combat ~= nil
+	        and target.components.health ~= nil
 	        and not target.components.health:IsDead()
-	        and not (inst.components.follower and inst.components.follower.leader == target))
+	        and not (inst.components.follower ~= nil and inst.components.follower.leader == target))
 	end
 end
 
@@ -57,18 +57,18 @@ local function RetargetFn(inst)
         function(guy)
             	return 	((guy:HasTag("monster") or guy:HasTag("smallcreature")) and
             			not guy:HasTag("pog") and
-	            		guy.components.health and
+	            		guy.components.health ~= nil and
 	            		not guy.components.health:IsDead() and
 	            		inst.components.combat:CanTarget(guy) and
-	            		not (inst.components.follower and inst.components.follower.leader ~= nil and guy:HasTag("abigail"))) and
-            			not (inst.components.follower and guy.components.follower and inst.components.follower.leader ~= nil and inst.components.follower.leader == guy.components.follower.leader) and
-            			not (inst.components.follower and guy.components.follower and inst.components.follower.leader ~= nil and guy.components.follower.leader and guy.components.follower.leader.components.inventoryitem and guy.components.follower.leader.components.inventoryitem.owner and inst.components.follower.leader == guy.components.follower.leader.components.inventoryitem.owner)
+	            		not (inst.components.follower ~= nil and inst.components.follower.leader ~= nil and guy:HasTag("abigail"))) and
+            			not (inst.components.follower ~= nil and guy.components.follower ~= nil and inst.components.follower.leader ~= nil and inst.components.follower.leader == guy.components.follower.leader) and
+            			not (inst.components.follower ~= nil and guy.components.follower ~= nil and inst.components.follower.leader ~= nil and guy.components.follower.leader and guy.components.follower.leader.components.inventoryitem and guy.components.follower.leader.components.inventoryitem.owner and inst.components.follower.leader == guy.components.follower.leader.components.inventoryitem.owner)
         end)
 end
 
 local function SleepTest(inst)
-	if inst.components.follower and inst.components.follower.leader then return end
-	if inst.components.combat and inst.components.combat.target then return end
+	if inst.components.follower ~= nil and inst.components.follower.leader then return end
+	if inst.components.combat ~= nil and inst.components.combat.target then return end
 	if inst.components.playerprox:IsPlayerClose() then return end
 	if not inst.sg:HasStateTag("busy") and (not inst.last_wake_time or GetTime() - inst.last_wake_time >= inst.nap_interval) then
 		inst.nap_length = math.random(TUNING.MIN_POGNAP_LENGTH, TUNING.MAX_POGNAP_LENGTH)
@@ -86,7 +86,7 @@ local function WakeTest(inst)
 end
 
 local function ShouldAcceptItem(inst, item)
-	if inst.components.health and inst.components.health:IsDead() then return false end
+	if inst.components.health ~= nil and inst.components.health:IsDead() then return false end
 	if item.components.edible and (
 		item.components.edible.foodtype == "MEAT" or
 		item.components.edible.foodtype == "VEGGIE" or

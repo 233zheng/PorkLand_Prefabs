@@ -27,10 +27,10 @@ local function LaunchProjectile(inst, targetpos)
     --inst.components.timer:StartTimer("Reload", TUNING.FIRESUPPRESSOR_RELOAD_TIME)
 end
 
-local function getstatus(inst)
+local function GetStatus(inst)
     if inst:HasTag("burnt") then
         return "BURNT"
-    elseif inst.components.spawner and inst.components.spawner:IsOccupied() then
+    elseif inst.components.spawner ~= nil and inst.components.spawner:IsOccupied() then
         if inst.lightson then
             return "FULL"
         else
@@ -41,7 +41,7 @@ end
 
 local function onhammered(inst, worker)
 
-    if inst:HasTag("fire") and inst.components.burnable then
+    if inst:HasTag("burnt") and inst.components.burnable ~= nil then
         inst.components.burnable:Extinguish()
     end
 
@@ -50,7 +50,7 @@ local function onhammered(inst, worker)
         inst.doortask = nil
     end
 
-    if inst.components.spawner then
+    if inst.components.spawner ~= nil then
         inst.components.spawner:ReleaseChild()
     end
 
@@ -62,10 +62,6 @@ local function onhammered(inst, worker)
 	inst.SoundEmitter:PlaySound("dontstarve/common/destroy_wood")
 	inst:Remove()
 
-end
-
-local function ongusthammerfn(inst)
-    onhammered(inst, nil)
 end
 
 local function onhit(inst, worker)
@@ -82,7 +78,7 @@ local function onsave(inst, data)
 end
 
 local function onload(inst, data)
-    if data and data.burnt then
+    if data ~= nil and data.burnt ~= nil then
         inst.components.burnable.onburnt(inst)
     end
 end
@@ -162,7 +158,7 @@ local function fn()
     inst.components.lootdropper:SetLoot(loot)
 
     inst:AddComponent("inspectable")
-    inst.components.inspectable.getstatus = getstatus
+    inst.components.inspectable.getstatus = GetStatus
 
     inst:AddComponent("workable")
     inst.components.workable:SetWorkAction(ACTIONS.HAMMER)

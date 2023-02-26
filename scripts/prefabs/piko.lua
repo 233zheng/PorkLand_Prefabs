@@ -1,6 +1,8 @@
 require "stategraphs/SGpiko"
 require "brains/pikobrain"
 
+-- 松鼠的发光还需要改
+
 local INTENSITY = .5
 
 local assets = {
@@ -29,7 +31,7 @@ local pikosounds =
 	hurt = "pl/creatures/piko/scream",
 }
 
-local function updatebuild(inst, cheeks)
+local function UpdateBuild(inst, cheeks)
 	local build = "squirrel_build"
 
 	if cheeks then
@@ -43,11 +45,11 @@ local function updatebuild(inst, cheeks)
 	inst.AnimState:SetBuild(build)
 end
 
-local function refreshbuild(inst)
+local function RefreshBuild(inst)
     if inst.components.inventory:NumItems() >0 then
-        inst.updatebuild(inst, true)
+        inst.UpdateBuild(inst, true)
     else
-        inst.updatebuild(inst, false)
+        inst.UpdateBuild(inst, false)
     end
 end
 
@@ -96,7 +98,7 @@ local function OnWentHome(inst)
 
     if teatree.components.inventory then
         inst.components.inventory:TransferInventory(teatree)
-        inst.updatebuild(inst, false)
+        inst.UpdateBuild(inst, false)
     end
 
 end
@@ -206,7 +208,7 @@ local function transformtest(inst)
 end
 
 local function converttoorange(inst)
-    inst.updatebuild(inst)
+    inst.UpdateBuild(inst)
 end
 
 local function OnSave(inst, data)
@@ -242,7 +244,7 @@ local function OnLoad(inst, data)
         inst.spawntask = nil
     end
 
-    refreshbuild(inst)
+    RefreshBuild(inst)
 
 end
 
@@ -251,7 +253,7 @@ local function OnHitOther(inst, other)
 end
 
 local function OnDrop(inst)
-	refreshbuild(inst)
+	RefreshBuild(inst)
 	inst.sg:GoToState("stunned")
 end
 
@@ -364,7 +366,7 @@ local function fn()
 	inst.OnEntityWake = OnWake
 	inst.OnEntitySleep = OnSleep
 
-	inst.updatebuild = updatebuild
+	inst.UpdateBuild = UpdateBuild
 
 	inst.OnSave = OnSave
 	inst.OnLoad = OnLoad
@@ -380,7 +382,7 @@ local function piko_orange()
 
     inst:AddTag("orange")
 
-    updatebuild(inst)
+    UpdateBuild(inst)
 
     return inst
 end

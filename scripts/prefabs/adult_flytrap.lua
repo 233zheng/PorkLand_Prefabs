@@ -26,7 +26,7 @@ SetSharedLootTable( 'adult_flytrap',
 })
 
 -- 生成小利齿捕蝇草
-local function grownplant(inst)
+local function GrownPlant(inst)
     local pt = Vector3(inst.Transform:GetWorldPosition())
     local angle = math.random() * 360
     if angle > 360 then angle = angle - 360 end
@@ -43,7 +43,7 @@ local function grownplant(inst)
             inst.sg:GoToState("taunt")
         end
     end
-    inst.startGrowTask(inst)
+    inst.StartGrowTask(inst)
 end
 
 -- 当找到新目标时
@@ -52,17 +52,17 @@ local function OnNewTarget(inst, data)
 end
 
 -- 开始生长
-local function startGrowTask(inst, time)
+local function StartGrowTask(inst, time)
     if not time then
         time = math.random()*(TUNING.TOTAL_DAY_TIME*2) + (TUNING.TOTAL_DAY_TIME*2)
     end
     if inst.growtask then inst.growtask:Cancel() inst.growtask = nil end
     inst.taskinfo = nil
-    inst.growtask, inst.growtaskinfo = inst:ResumeTask(time, function() grownplant(inst) end)
+    inst.growtask, inst.growtaskinfo = inst:ResumeTask(time, function() GrownPlant(inst) end)
 end
 
 -- 寻找肉类食物
-local function findfood(inst,guy)
+local function FindFood(inst,guy)
     if guy.components.inventory then
         return guy.components.inventory:FindItem(
             function(item)
@@ -78,7 +78,7 @@ end
 local function retargetfn(inst)
     return FindEntity(inst, TUNING.ADULT_FLYTRAP_ATTACK_DIST, function(guy)
 
-        if guy:HasTag("plantkin") and (guy:GetDistanceSqToInst(inst) > TUNING.FLYTRAP_TARGET_DIST*TUNING.FLYTRAP_TARGET_DIST or not findfood(inst,guy)) then
+        if guy:HasTag("plantkin") and (guy:GetDistanceSqToInst(inst) > TUNING.FLYTRAP_TARGET_DIST*TUNING.FLYTRAP_TARGET_DIST or not FindFood(inst,guy)) then
             return false
         end
         if guy.components.combat and guy.components.health and not guy.components.health:IsDead() then
@@ -87,8 +87,8 @@ local function retargetfn(inst)
     end)
 end
 
-local function shouldKeepTarget(inst, target)
-    if not inst.keeptargetevenifnofood and target:HasTag("plantkin") and not findfood(inst,target) then
+local function ShouldKeepTarget(inst, target)
+    if not inst.keeptargetevenifnofood and target:HasTag("plantkin") and not FindFood(inst,target) then
         return false
     end
     if target and target:IsValid() and target.components.health and not target.components.health:IsDead() then
@@ -114,17 +114,17 @@ local function onsave(inst, data)
 end
 
 local function onload(inst, data)
-    if data then
-        if data.growtask then
-            startGrowTask(inst, data.growtask)
+    if data ~= nil then
+        if data.growtask ~= nil then
+            StartGrowTask(inst, data.growtask)
         end
-        if data.spawned then
+        if data.spawned ~= nil then
             inst:AddTag("spawned")
         end
     end
 end
 
-local function onSpawn(inst)
+local function OnSpawn(inst)
     if not inst:HasTag("spawned") then
         inst.start_scale = 1.4
         inst.inc_scale = (1.8 - 1.4) /5
@@ -187,21 +187,21 @@ local function fn()
     inst.components.combat:SetDefaultDamage(TUNING.ADULT_FLYTRAP_DAMAGE)
     inst.components.combat:SetAttackPeriod(TUNING.ADULT_FLYTRAP_ATTACK_PERIOD)
     inst.components.combat:SetRetargetFunction(GetRandomWithVariance(2, 0.5), retargetfn)
-    inst.components.combat:SetKeepTargetFunction(shouldKeepTarget)
+    inst.components.combat:SetKeepTargetFunction(ShouldKeepTarget)
 
     inst:ListenForEvent("newcombattarget", OnNewTarget)
     inst:ListenForEvent("attacked", OnAttacked)
 
     inst:SetStateGraph("SGadultflytrap")
 
-    inst.startGrowTask = startGrowTask
-    inst.onSpawn = onSpawn
+    inst.StartGrowTask = StartGrowTask
+    inst.OnSpawn = OnSpawn
     inst.OnSave = onsave
     inst.OnLoad = onload
 
-    inst:DoTaskInTime(0,function() onSpawn(inst) end)
+    inst:DoTaskInTime(0,function() OnSpawn(inst) end)
 
-    startGrowTask(inst)
+    StartGrowTask(inst)
 
     MakeHauntablePanic(inst)
     MakeLargeFreezableCharacter(inst)

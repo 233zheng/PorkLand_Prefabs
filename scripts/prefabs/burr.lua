@@ -14,6 +14,7 @@ local function plant(inst, growtime)
     rainforesttree_sapling:StartGrowing(growtime)
     rainforesttree_sapling.Transform:SetPosition(inst.Transform:GetWorldPosition())
     rainforesttree_sapling.SoundEmitter:PlaySound("dontstarve/wilson/plant_tree")
+    rainforesttree_sapling:AddTag("rainforesttree")
     inst:Remove()
 end
 
@@ -22,20 +23,6 @@ local function ondeploy(inst, pt, deployer)
     inst.Transform:SetPosition(pt:Get())
     local timeToGrow = GetRandomWithVariance(TUNING.PINECONE_GROWTIME.base, TUNING.PINECONE_GROWTIME.random)
     plant(inst, timeToGrow)
-    inst:AddTag("rainforesttree")
-end
-
-local function describe(inst)
-    if inst.growtime then
-        return "PLANTED"
-    end
-end
-
-local function displaynamefn(inst)
-    if inst.growtime then
-        return STRINGS.NAMES.BURR_SAPLING
-    end
-    return STRINGS.NAMES.BURR
 end
 
 local function hatchtree(inst)
@@ -61,25 +48,9 @@ local function OnSeasonChange(inst)
     end
 end
 
-local function OnSave(inst, data)
-    if inst.growtime then
-        data.growtime = inst.growtime - GetTime()
-    end
-
-    if inst.taskgrowinfo then
-        data.taskgrow = inst:TimeRemainingInTask(inst.taskgrowinfo)
-    end
-end
-
 local function OnLoad(inst, data)
-    if data and data.growtime then
+    if data ~= nil and data.growtime ~= nil then
         plant(inst, data.growtime)
-    end
-
-    if data and data.taskgrow then
-        if inst.taskgrow then inst.taskgrow:Cancel() inst.taskgrow = nil end
-        inst.taskgrowinfo = nil
-        inst.taskgrow, inst.taskgrowinfo = inst:ResumeTask(data.taskgrow, function() hatchtree(inst)  end)
     end
 end
 
@@ -115,7 +86,6 @@ local function fn()
 	inst.components.stackable.maxsize = TUNING.STACK_SIZE_SMALLITEM
 
     inst:AddComponent("inspectable")
-    inst.components.inspectable.getstatus = describe
 
     inst:AddComponent("fuel")
     inst.components.fuel.fuelvalue = TUNING.SMALL_FUEL
@@ -128,9 +98,6 @@ local function fn()
 
     inst:WatchWorldState("season", OnSeasonChange)
 
-    inst.displaynamefn = displaynamefn
-
-    -- inst.OnSave = OnSave
     inst.OnLoad = OnLoad
 
     MakeHauntableLaunchAndPerish(inst)
@@ -217,6 +184,6 @@ local function saplingfn()
     return inst
 end
 
-return Prefab("burr", fn, assets),
-        Prefab("rainforesttree_sapling", saplingfn, assets),
-	   MakePlacer("burr_placer", "burr", "burr", "idle_planted")
+return Prefab("burr", fn, assets, prefabs),
+        Prefab("rainforesttree_sapling", saplingfn, assets, prefabs),
+        MakePlacer("burr_placer", "burr", "burr", "idle_planted")

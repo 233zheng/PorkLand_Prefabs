@@ -713,14 +713,6 @@ local function MakeFn(build, stage, data)
             Make_Stump(inst)
 		end
 
-		-- inst:ListenForEvent("blownbywind", function()
-	    -- 	if inst.components.bloomable:CanBloom() and inst:HasTag("blooming") then
-	    -- 		if math.random()< 0.30 then  --0.15
-	    -- 			inst.components.bloomable:DoBloom()
-	    -- 		end
-	    -- 	end
-	    -- end)
-
 		MakeSnowCovered(inst, .01)
 
 		inst.OnSave = OnSave

@@ -41,22 +41,22 @@ local function OnAttacked(inst, data)
     inst.components.combat:SetTarget(data.attacker)
 end
 
-local function shadownon(inst)
+local function ShadowOn(inst)
 	inst.DynamicShadow:SetSize(1.5, .75)
 end
 
-local function shadowoff(inst)
+local function ShadowOff(inst)
 	inst.DynamicShadow:SetSize(0,0)
 end
 
-local function onnear(inst)
+local function OnNear(inst)
 	if not inst.near then
 		inst.near = true
 		inst:PushEvent("godown")
 	end
 end
 
-local function onfar(inst)
+local function OnFar(inst)
 	if inst.near then
 		inst.near = nil
 		inst:PushEvent("goup")
@@ -78,9 +78,6 @@ local function OnSave(inst, data)
   		references = {data.leader}
   	end
     return references
-end
-
-local function OnLoad(inst, data)
 end
 
 local function LoadPostPass(inst,ents, data)
@@ -154,13 +151,13 @@ local function commonfn()
 	-- MakeTinyFreezableCharacter(inst, "frogsack")
 
 	inst:AddComponent("knownlocations")
-	inst:DoTaskInTime(0, function()
-		inst.components.knownlocations:RememberLocation("home", Point(inst.Transform:GetWorldPosition()), true)
-	end)
+	-- inst:DoTaskInTime(0, function()
+	-- 	inst.components.knownlocations:RememberLocation("home", Point(inst.Transform:GetWorldPosition()), true)
+	-- end)
 
     inst:AddComponent("playerprox")
-    inst.components.playerprox:SetOnPlayerNear(onnear)
-    inst.components.playerprox:SetOnPlayerFar(onfar)
+    inst.components.playerprox:SetOnPlayerNear(OnNear)
+    inst.components.playerprox:SetOnPlayerFar(OnFar)
     inst.components.playerprox:SetDist(10,16)
 
     inst:AddComponent("distancefade")
@@ -168,7 +165,7 @@ local function commonfn()
 
  	inst:AddComponent("eater")
  	inst.components.eater:SetOmnivore()
-     inst.components.eater.strongstomach = true
+    inst.components.eater.strongstomach = true
 
 	inst:AddComponent("inspectable")
 
@@ -178,18 +175,17 @@ local function commonfn()
 	inst:ListenForEvent("attacked", OnAttacked)
 	inst:ListenForEvent("death", OnKilled)
 
-	inst.shadownon = shadownon
-	inst.shadowoff = shadowoff
+	inst.ShadowOn = ShadowOn
+	inst.ShadowOff = ShadowOff
 
     inst.OnSave = OnSave
-    inst.OnLoad = OnLoad
     inst.LoadPostPass = LoadPostPass
 
     MakeMediumBurnable(inst)
     MakeSmallPropagator(inst)
     MakeHauntableIgnite(inst)
 
-	onfar(inst)
+	OnFar(inst)
 	inst.sg:GoToState("idle_up")
 
 	return inst

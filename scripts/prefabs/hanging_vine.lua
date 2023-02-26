@@ -126,8 +126,6 @@ end
 local function OnShear(inst)
     if inst.spawnpatch then
         inst.spawnpatch.spawnNewVine(inst.spawnpatch, inst.prefab)
-        print(tostring(inst.spawnpatch).. tostring(inst.prefab))
-
     end
 
     inst:Remove()
@@ -150,7 +148,7 @@ local function OnSave(inst, data)
 end
 
 local function OnLoad(inst, data)
-    if data ~=nil then
+    if data ~= nil then
         if data.spawnedchildren then
         	inst.spawnedchildren = true
         end

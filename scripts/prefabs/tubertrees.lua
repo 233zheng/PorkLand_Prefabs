@@ -116,7 +116,7 @@ local function OnBurnt(inst, imm)
 
 		inst.components.lootdropper:SetLoot({})
 
-		if inst.components.workable then
+		if inst.components.workable ~= nil then
 			inst.components.workable:SetWorkLeft(1)
 			inst.components.workable:SetOnWorkCallback(nil)
 			inst.components.workable:SetOnFinishCallback(chop_down_burnt_tree)
@@ -250,7 +250,7 @@ end
 local function doTransformNormal(inst)
 	if not inst:HasTag("rotten") then
 		inst.build = "normal"
-		if inst.components.hackable then
+		if inst.components.hackable ~= nil then
 			inst.components.hackable.product = "tuber_crop"
 		end
 		updateTreeType(inst)
@@ -371,7 +371,7 @@ local function OnEntityWake(inst)
 			end
 		end
 
-		if not inst.components.propagator then
+		if not inst.components.propagator ~= nil then
 			if inst:HasTag("stump") then
 				MakeSmallPropagator(inst)
 			else
@@ -461,7 +461,7 @@ local function onhackedfinal(prefab,data)
 		inst.components.workable:SetWorkLeft(1)
     	inst:AddTag("stump")
 
-	    if inst.components.growable then
+	    if inst.components.growable ~= nil then
 	        inst.components.growable:StopGrowing()
 	    end
 
@@ -470,7 +470,7 @@ local function onhackedfinal(prefab,data)
 
 	else
 
-		if  inst.components.hackable then
+		if inst.components.hackable ~= nil then
 			inst.components.hackable.hacksleft = inst.components.hackable.maxhacks
 		    inst.components.hackable.canbehacked = true
 		    inst.components.hackable.hasbeenhacked = false
@@ -591,12 +591,6 @@ local function MakeFn(build, stage, data)
         inst:AddComponent("simplemagicgrower")
         inst.components.simplemagicgrower:SetLastStage(#inst.components.growable.stages)
 
-        --暂时没有风
-        -- MakeTreeBlowInWindGust(inst, TUNING.PALMTREE_WINDBLOWN_SPEED, TUNING.PALMTREE_WINDBLOWN_FALL_CHANCE)
-        inst.PushSway = PushSway
-        inst.Sway = Sway
-        -- inst.WindGetAnims = WindAnims
-
 		inst:AddComponent("hackable")
 		inst.components.hackable:SetUp("tuber_crop", TUNING.VINE_REGROW_TIME )
 		inst.components.hackable.onregenfn = onregenfn
@@ -643,6 +637,7 @@ local function MakeFn(build, stage, data)
         updateart(inst)
 
 		MakeSnowCovered(inst, .01)
+
 		return inst
 	end
 	return fn
