@@ -76,11 +76,11 @@ local function CanBeAttacked(inst, attacker)
 	return inst.State == "above"
 end
 
-local function OnSleep(inst)
+local function OnEntitySleep(inst)
     inst.SoundEmitter:KillAllSounds()
 end
 
-local function OnRemove(inst)
+local function OnRemoveEntity(inst)
     inst.SoundEmitter:KillAllSounds()
 end
 
@@ -159,8 +159,8 @@ local function fn()
     inst.SetState = SetState
     inst.IsState = IsState
     inst.sound = sounds
-	inst.OnEntitySleep = OnSleep
-    inst.OnRemoveEntity = OnRemove
+	inst.OnEntitySleep = OnEntitySleep
+    inst.OnRemoveEntity = OnRemoveEntity
     inst:ListenForEvent("enterlimbo", OnRemove)
 
     MakeHauntablePanic(inst)

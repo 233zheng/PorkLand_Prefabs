@@ -25,18 +25,23 @@ local function ondeploy(inst, pt, deployer)
     plant(inst, timeToGrow)
 end
 
+--
 local function hatchtree(inst)
     local pt = inst:GetPosition()
-    local ents = TheSim:FindEntities(pt.x,pt.y,pt.z, 20, {"rainforesttree"},{"stump"})
+    local musttags = {"rainforesttree"}
+    local canttags = {"stump"}
+    local ents = TheSim:FindEntities(pt.x,pt.y,pt.z, 20, musttags, canttags)
     if #ents < 4 then
         ondeploy(inst, pt)
     else
-        if inst:GetIsOnWater() then
+        if IsOnWater(inst) then
             inst.AnimState:PlayAnimation("disappear_water")
         else
             inst.AnimState:PlayAnimation("disappear")
         end
-        inst:ListenForEvent("animover", function() inst:Remove() end)
+        inst:ListenForEvent("animover", function()
+            inst:Remove()
+        end)
     end
 end
 

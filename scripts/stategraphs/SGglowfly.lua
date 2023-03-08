@@ -1,32 +1,20 @@
 require("stategraphs/commonstates")
 
-local WALK_SPEED = 5
-
 local actionhandlers = {
     ActionHandler(ACTIONS.GOHOME, "action"),
 }
 
 local events = {
-    EventHandler("hatch", function(inst)
-        if inst:HasTag("cocoon") then
-            inst.sg:GoToState("cocoon_pst")
-        end
-    end),
-
     EventHandler("cocoon", function(inst)
         if not inst.sg:HasStateTag("busy") then
             inst:RemoveTag("wantstococoon")
-            inst.ChangeToCocoon(inst,false)
+            inst.ChangeToCocoon(inst, false)
         end
     end),
 
     EventHandler("attacked", function(inst)
         if inst.components.health:GetPercent() > 0 then
-            if inst:HasTag("cocoon") then
-                inst.sg:GoToState("cocoon_hit")
-            else
-                inst.sg:GoToState("hit")
-            end
+            inst.sg:GoToState("hit")
         end
     end),
 
@@ -37,18 +25,14 @@ local events = {
     end),
 
     EventHandler("death", function(inst)
-        if inst:HasTag("cocoon") then
-            inst.sg:GoToState("cocoon_death")
-        else
-            inst.sg:GoToState("death")
-        end
+        inst.sg:GoToState("death")
     end),
 
     CommonHandlers.OnSleep(),
     CommonHandlers.OnFreeze(),
 
     EventHandler("locomote", function(inst)
-        if not inst.sg:HasStateTag("busy") and not inst:HasTag("cocoon") then
+        if not inst.sg:HasStateTag("busy") then
 			local wants_to_move = inst.components.locomotor:WantsToMoveForward()
 			if not inst.sg:HasStateTag("attack") then
 				if wants_to_move then
@@ -61,16 +45,6 @@ local events = {
     end),
 }
 
-local function SpawnRabidBeetle(inst)
-    local pos = Vector3(inst.Transform:GetWorldPosition())
-
-    local bug = SpawnPrefab("rabid_beetle")
-    if bug ~= nil then
-        bug.Transform:SetPosition(pos.x,pos.y,pos.z)
-        bug.sg:GoToState("hatch")
-    end
-end
-
 local states = {
     State{
         name = "death",
@@ -78,37 +52,32 @@ local states = {
 
         onenter = function(inst)
 		    inst.SoundEmitter:PlaySound(inst.sounds.death)
-
-            if inst:HasTag("cocoon") then
-                inst.AnimState:PlayAnimation("cocoon_death")
-            else
-                inst.AnimState:PlayAnimation("death")
-            end
-
+            inst.AnimState:PlayAnimation("death")
 			inst.Physics:Stop()
 			RemovePhysicsColliders(inst)
-			if inst.components.lootdropper then
+			if inst.components.lootdropper ~= nil then
 				inst.components.lootdropper:DropLoot(Vector3(inst.Transform:GetWorldPosition()))
 			end
         end,
 
 		events=
         {
-            EventHandler("animover", function(inst) inst:Remove() end),
+            EventHandler("animover", function(inst)
+                inst:Remove()
+            end),
         },
     },
 
     State{
         name = "action",
 
-        onenter = function(inst, playanim)
+        onenter = function(inst)
             inst.Physics:Stop()
             inst.AnimState:PlayAnimation("idle", true)
             inst:PerformBufferedAction()
         end,
 
-        events=
-        {
+        events = {
             EventHandler("animover", function (inst)
                 inst.sg:GoToState("idle")
             end),
@@ -144,19 +113,15 @@ local states = {
 
         onenter = function(inst)
             inst.Physics:Stop()
-            if inst:HasTag("cocoon") then
-                inst.AnimState:PlayAnimation("cocoon_idle_loop", true)
-            else
-                inst.AnimState:PlayAnimation("walk_loop", false)
-            end
+            inst.AnimState:PlayAnimation("walk_loop", false)
         end,
 
         timeline = {
-            TimeEvent(3*FRAMES, function(inst) if not inst:HasTag("cocoon") then inst.SoundEmitter:PlaySound("dontstarve_DLC003/creatures/glowfly/buzz") end end),
-            TimeEvent(6*FRAMES, function(inst) if not inst:HasTag("cocoon") then inst.SoundEmitter:PlaySound("dontstarve_DLC003/creatures/glowfly/buzz") end end),
-            TimeEvent(9*FRAMES, function(inst) if not inst:HasTag("cocoon") then inst.SoundEmitter:PlaySound("dontstarve_DLC003/creatures/glowfly/buzz") end end),
-            TimeEvent(12*FRAMES, function(inst) if not inst:HasTag("cocoon") then inst.SoundEmitter:PlaySound("dontstarve_DLC003/creatures/glowfly/buzz") end end),
-            TimeEvent(15*FRAMES, function(inst) if not inst:HasTag("cocoon") then inst.SoundEmitter:PlaySound("dontstarve_DLC003/creatures/glowfly/buzz") end end),
+            TimeEvent(3*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve_DLC003/creatures/glowfly/buzz") end),
+            TimeEvent(6*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve_DLC003/creatures/glowfly/buzz") end),
+            TimeEvent(9*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve_DLC003/creatures/glowfly/buzz") end),
+            TimeEvent(12*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve_DLC003/creatures/glowfly/buzz") end),
+            TimeEvent(15*FRAMES, function(inst) inst.SoundEmitter:PlaySound("dontstarve_DLC003/creatures/glowfly/buzz") end),
         },
 
         events = {
@@ -170,19 +135,25 @@ local states = {
         name = "attack",
         tags = {"attack"},
 
-        onenter = function(inst, cb)
+        onenter = function(inst)
             inst.Physics:Stop()
             inst.components.combat:StartAttack()
             inst.AnimState:PlayAnimation("atk")
         end,
 
         timeline = {
-            TimeEvent(10*FRAMES, function(inst) inst.SoundEmitter:PlaySound(inst.sounds.attack) end),
-            TimeEvent(15*FRAMES, function(inst) inst.components.combat:DoAttack() end),
+            TimeEvent(10*FRAMES, function(inst)
+                inst.SoundEmitter:PlaySound(inst.sounds.attack)
+            end),
+            TimeEvent(15*FRAMES, function(inst)
+                inst.components.combat:DoAttack()
+            end),
         },
 
         events = {
-            EventHandler("animover", function(inst) inst.sg:GoToState("idle") end),
+            EventHandler("animover", function(inst)
+                inst.sg:GoToState("idle")
+            end),
         },
     },
 
@@ -197,97 +168,23 @@ local states = {
         end,
 
         events = {
-            EventHandler("animover", function(inst) inst.sg:GoToState("idle") end ),
-        },
-    },
-
-    State{
-        name = "cocoon_pre",
-        tags = {"cocoon","busy"},
-
-        onenter = function(inst)
-            print("AT THE STATE")
-            inst.Physics:Stop()
-            inst.AnimState:PlayAnimation("cocoon_idle_pre")
-        end,
-
-        events= {
             EventHandler("animover", function(inst)
                 inst.sg:GoToState("idle")
             end),
-        },
-    },
-
-    State{
-        name = "cocoon_pst",
-        tags = {"cocoon","busy"},
-
-        onenter = function(inst)
-            inst.Physics:Stop()
-            SpawnRabidBeetle(inst)
-            inst.AnimState:PlayAnimation("cocoon_idle_pst")
-        end,
-
-        events = {
-            EventHandler("animover", function(inst)
-                inst:Remove()
-            end),
-        },
-    },
-
-    State{
-        name = "cocoon_expire",
-        tags = {"cocoon","busy"},
-
-        onenter = function(inst)
-            inst.AnimState:PlayAnimation("cocoon_idle_pst")
-        end,
-
-        events= {
-            EventHandler("animover", function(inst) inst:Remove() end),
-        },
-    },
-
-    State{
-        name = "cocoon_hit",
-        tags = {"cocoon","busy"},
-
-        onenter = function(inst)
-            inst.SoundEmitter:PlaySound(inst.sounds.hit)
-            inst.AnimState:PlayAnimation("cocoon_hit")
-            inst.Physics:Stop()
-        end,
-
-        events= {
-            EventHandler("animover", function(inst) inst.sg:GoToState("idle") end ),
-        },
-    },
-
-    State{
-        name = "cocoon_death",
-        tags = {"cocoon","busy"},
-
-        onenter = function(inst)
-            inst.AnimState:PlayAnimation("cocoon_death")
-
-            RemovePhysicsColliders(inst)
-            if inst.components.lootdropper ~= nil then
-                inst.components.lootdropper:DropLoot(Vector3(inst.Transform:GetWorldPosition()))
-            end
-        end,
-
-        events= {
-            EventHandler("animover", function(inst) inst:Remove() end),
         },
     },
 }
 
 CommonStates.AddSleepStates(states, {
     starttimeline = {
-        TimeEvent(23*FRAMES, function(inst) inst.SoundEmitter:KillSound("buzz") end)
+        TimeEvent(23*FRAMES, function(inst)
+            inst.SoundEmitter:KillSound("buzz")
+        end)
     },
     waketimeline = {
-        TimeEvent(1*FRAMES, function(inst) inst.SoundEmitter:PlaySound(inst.sounds.buzz, "buzz") end)
+        TimeEvent(1*FRAMES, function(inst)
+            inst.SoundEmitter:PlaySound(inst.sounds.buzz, "buzz")
+        end)
     },
 })
 

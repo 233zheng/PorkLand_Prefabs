@@ -1,3 +1,4 @@
+local TUNING = GLOBAL.TUNING
 GLOBAL.setfenv(1, GLOBAL)
 
 local seg_time = TUNING.SEG_TIME
@@ -112,6 +113,9 @@ local tuning = {
     GLOWFLY_COCOON_HEALTH = 300,
     GLOWFLY_WALK_SPEED = 6,
     GLOWFLY_RUN_SPEED = 5,
+    DEFAULT_GLOWFLY = 4,
+    MAX_GLOWFLY = 10,
+    MIN_GLOWFLY = 0,
 
     PIKO_HEALTH = 100,
     PIKO_RESPAWN_TIME = day_time*4,
@@ -154,12 +158,6 @@ local tuning = {
     GRABBING_VINE_RANGE = 3,
     GRABBING_VINE_HITRANGE = 4,
 
-    GLOWFLY_WALKSPEED = 6,
-    GLOWFLY_RUNSPEED = 8,
-
-    DEFAULT_GLOWFLY = 4,
-    MAX_GLOWFLY = 10,
-    MIN_GLOWFLY = 0,
 
     JUNGLETREE_GROW_TIME =
     {

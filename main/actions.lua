@@ -45,7 +45,7 @@ local PL_COMPONENT_ACTIONS =
         if inst:HasTag("poison_antidote") and target and target:HasTag("poisonable") then
             if target:HasTag("poison") or
             (target:HasTag("player") and
-            ((target.components.poisonable and target.components.poisonable:IsPoisoned()) or
+            ((target.components.poisonable ~= nil and target.components.poisonable:IsPoisoned()) or
             (target.player_classified and target.player_classified.ispoisoned:value()) or
             inst:HasTag("poison_vaccine"))) then
                 table.insert(actions, ACTIONS.CUREPOISON)
@@ -65,7 +65,7 @@ local PL_COMPONENT_ACTIONS =
     INVENTORY = { -- args: inst, doer, actions, right
     poisonhealer = function(inst, doer, actions, right)
         if inst:HasTag("poison_antidote") and doer:HasTag("poisonable") and (doer:HasTag("player") and
-        ((doer.components.poisonable and doer.components.poisonable:IsPoisoned()) or
+        ((doer.components.poisonable ~= nil and doer.components.poisonable:IsPoisoned()) or
         (doer.player_classified and doer.player_classified.ispoisoned:value()) or
         inst:HasTag("poison_vaccine"))) then
             table.insert(actions, ACTIONS.CUREPOISON)

@@ -30,12 +30,9 @@ local glowflys = {}
 local prefab = "glowfly"
 
 local glowflydata = {
-    glowfly_amount = TUNING.GDEFAULT_GLOWFLY,
-
+    glowfly_amount = TUNING.DEFAULT_GLOWFLY,
     glowfly_amount_default = TUNING.DEFAULT_GLOWFLY,
-
     glowfly_amount_max = TUNING.MAX_GLOWFLY,
-
     glowfly_amount_min = TUNING.MIN_GLOWFLY
 }
 
@@ -81,11 +78,11 @@ local function SetGlowflyCocoontask(inst, time)
     end)
 end
 
-local function SetGlowflyhatchtask(inst, time)
-	inst.glowflyhatchtask, inst.glowflyhatchtaskinfo = inst:ResumeTask(time, function()
-        _world:PushEvent("glowflyhatch")
-    end)
-end
+-- local function SetGlowflyhatchtask(inst, time)
+-- 	inst.glowflyhatchtask, inst.glowflyhatchtaskinfo = inst:ResumeTask(time, function()
+--         _world:PushEvent("glowflyhatch")
+--     end)
+-- end
 
 local function SpawnGlowflyForPlayer(player, reschedule)
     local pt = player:GetPosition()
@@ -117,11 +114,11 @@ local function GlowflyCocoon()
     end
 end
 
-local function Glowflyhatch()
-    if not self.inst.glowflyhatchtask then
-        SetGlowflyhatchtask(self.inst, 5)
-    end
-end
+-- local function Glowflyhatch()
+--     if not self.inst.glowflyhatchtask then
+--         SetGlowflyhatchtask(self.inst, 5)
+--     end
+-- end
 
 local function ScheduleSpawn(player, initialspawn)
     if _scheduledtasks[player] == nil then
@@ -206,7 +203,7 @@ end
 --Register events
 -- inst:WatchWorldState("isautumn", GlowflyCocoon)
 inst:WatchWorldState("iswinter", GlowflyCocoon)
-inst:WatchWorldState("issummer", Glowflyhatch)
+-- inst:WatchWorldState("issummer", Glowflyhatch)
 inst:ListenForEvent("ms_playerjoined", OnPlayerJoined, TheWorld)
 inst:ListenForEvent("ms_playerleft", OnPlayerLeft, TheWorld)
 
@@ -277,9 +274,9 @@ function self:OnSave()
 		data.glowflycocoontask = self.inst:TimeRemainingInTask(self.inst.glowflycocoontaskinfo)
 	end
 
-	if self.glowflyhatchtask then
-		data.glowflyhatchtask = self.inst:TimeRemainingInTask(self.inst.glowflyhatchtaskinfo)
-	end
+	-- if self.glowflyhatchtask then
+	-- 	data.glowflyhatchtask = self.inst:TimeRemainingInTask(self.inst.glowflyhatchtaskinfo)
+	-- end
 
 	return data
 end
@@ -292,9 +289,9 @@ function self:OnLoad(data)
             SetGlowflyCocoontask(self.inst, data.glowflycocoontask)
         end
 
-        if data.glowflyhatchtask then
-            SetGlowflyhatchtask(self.inst, data.glowflyhatchtask)
-        end
+        -- if data.glowflyhatchtask then
+        --     SetGlowflyhatchtask(self.inst, data.glowflyhatchtask)
+        -- end
     end
 
     ToggleUpdate(true)

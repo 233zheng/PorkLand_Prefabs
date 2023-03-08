@@ -109,11 +109,13 @@ local states=
 
     State{
         name = "action",
-        onenter = function(inst, playanim)
+
+        onenter = function(inst)
             inst.Physics:Stop()
             inst.AnimState:PlayAnimation("idle_loop", true)
             inst:PerformBufferedAction()
         end,
+
         events=
         {
             EventHandler("animover", function (inst)

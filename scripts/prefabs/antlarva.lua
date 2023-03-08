@@ -22,7 +22,7 @@ local function fn()
 	inst.entity:AddSoundEmitter()
     inst.entity:AddNetwork()
 
-    ANTLARVAPhysics(inst)
+    MakeAntLarvaPhysics(inst)
 
 	inst.AnimState:SetBank("ant_larva")
     inst.AnimState:SetBuild("ant_larva")
@@ -32,8 +32,6 @@ local function fn()
 	if not TheWorld.ismastersim then
 		return inst
 	end
-
-    -- inst.persists = false
 
 	inst:AddComponent("locomotor")
 

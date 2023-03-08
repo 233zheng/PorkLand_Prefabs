@@ -1,4 +1,4 @@
-require("brains/mosquitobrain")
+require("brains/glowflybrain")
 require("stategraphs/SGglowfly")
 
 local assets = {
@@ -6,11 +6,10 @@ local assets = {
 }
 
 local prefabs = {
-	"mosquitosack",
-	"mosquitosack_yellow",
+    "glowfly_cocoon"
 }
 
-local brain = require("brains/mosquitobrain")
+local brain = require("brains/glowflybrain")
 
 local sounds = {
 	takeoff = "dontstarve/creatures/mosquito/mosquito_takeoff",
@@ -30,8 +29,6 @@ SetSharedLootTable('glowflyinventory',
 })
 
 local INTENSITY = .75
-local SHARE_TARGET_DIST = 30
-local MAX_TARGET_SHARES = 10
 
 local function FadeIn(inst)
     inst.components.fader:StopAll()
@@ -98,7 +95,7 @@ local function OnWorked(inst, worker)
 	end
 end
 
-local function OnKilled(inst)
+local function OnDeath(inst)
     inst.components.fader:Fade(INTENSITY, 0, .75+math.random()*1, function(v)
         inst.Light:SetIntensity(v)
     end, function()
@@ -107,14 +104,22 @@ local function OnKilled(inst)
 end
 
 local function OnBorn(inst)
-	inst.components.fader:Fade(0, INTENSITY, .75+math.random()*1, function(v) inst.Light:SetIntensity(v) end)
+	inst.components.fader:Fade(0, INTENSITY, .75+math.random()*1, function(v)
+        inst.Light:SetIntensity(v)
+    end)
 end
 
--- local function CheckRemoveGlowfly(inst, player)
--- 	if not inst:HasTag("cocoonspawn") and inst:GetDistanceSqToInst(player) > 30*30 and not inst.components.inventoryitem:IsHeld() then
--- 		inst:Remove()
--- 	end
--- end
+local function CheckRemoveGlowfly(inst)
+    local x, y, z = inst.Transform:GetWorldPosition()
+    for _, player in ipairs(AllPlayers) do
+       local px, py, pz = player.Transform:GetWorldPosition()
+       local distsq = distsq(x, z, px, pz)
+
+        if not inst:HasTag("cocoonspawn") and distsq > 30*30 and not inst.components.inventoryitem:IsHeld() then
+            inst:Remove()
+        end
+    end
+end
 
 local function OnRemoveEntity(inst)
     if inst.glowflyspawner ~= nil then
@@ -134,30 +139,23 @@ local function OnNear(inst)
 	end
 end
 
---
-local function ChangeToCocoon(inst, forced)
- 	inst:AddTag("cocoon")
- 	inst:AddTag("cocoonspawn")
-
-    inst.components.inspectable.nameoverride = "glowfly_cocoon"
-    inst.components.health:SetMaxHealth(TUNING.GLOWFLY_COCOON_HEALTH)
-    inst.components.health:SetPercent(1)
-
-    if not forced then
-    	inst.sg:GoToState("cocoon_pre")
-	else
-    	inst.sg:GoToState("idle")
+local function ChangeToCocoon(inst, force)
+    if not force then
+        local cocoon = SpawnPrefab("glowfly_cocoon")
+        if not TheWorld.state.isautumn then
+            cocoon:AddTag("readytohatch")
+            if cocoon.components.playerprox == nil then
+                cocoon:AddComponent("playerprox")
+                cocoon.components.playerprox:SetDist(30,31)
+                cocoon.components.playerprox:SetOnPlayerNear(OnNear)
+            end
+        end
+        local pt = inst.Transform:GetWorldPosition()
+        cocoon.Transform:SetPosition(pt)
+    else
+        inst.sg:GoToState("idle")
     	inst.AnimState:SetTime(math.random()*2)
 	end
-
-	if not TheWorld.state.isautumn then
-        inst:AddTag("readytohatch")
-        if inst.components.playerprox == nil then
-            inst:AddComponent("playerprox")
-            inst.components.playerprox:SetDist(30,31)
-            inst.components.playerprox:SetOnPlayerNear(OnNear)
-        end
-    end
 end
 
 local function OnDropped(inst)
@@ -170,6 +168,7 @@ local function OnDropped(inst)
 	if inst.brain ~= nil then
 		inst.brain:Start()
 	end
+
 	if inst.sg ~= nil then
 		inst.sg:Start()
 	end
@@ -199,7 +198,7 @@ local function ForceCocoon(inst)
 	ChangeToCocoon(inst, true)
 end
 
-local function inspect(inst)
+local function GetStatus(inst)
 	if inst.components.health:GetPercent() <= 0 then
     	return "DEAD"
     elseif inst.components.sleeper:IsAsleep() then
@@ -216,22 +215,7 @@ local function SetCocoonTask(inst, time)
     end)
 end
 
-local function OnChangeSeason(inst, season)
-    if season ~= "autumn" then
-        inst.expiretask, inst.expiretaskinfo = inst:ResumeTask(2* TUNING.SEG_TIME + math.random()*3, function()
-            inst.sg:GoToState("cocoon_expire")
-        end)
-    else
-        inst:AddTag("readytohatch")
-        if inst.components.playerprox == nil then
-            inst:AddComponent("playerprox")
-            inst.components.playerprox:SetDist(30,31)
-            inst.components.playerprox:SetOnPlayerNear(OnNear)
-        end
-    end
-end
-
-local function OnPickedUp(inst)
+local function OnPutInInventory(inst)
 	inst.components.lootdropper:SetChanceLootTable('glowflyinventory')
     if inst.glowflyspawner ~= nil then
         inst.glowflyspawner:StopTracking(inst)
@@ -242,14 +226,13 @@ local function OnSave(inst, data)
 	if inst.cocoon_task ~= nil then
 		data.cocoon_task = inst:TimeRemainingInTask(inst.cocoon_taskinfo)
 	end
+
 	if inst:HasTag("cocoon") then
 		data.cocoon = true
 	end
+
 	if inst:HasTag("cocoonspawn") then
 		data.cocoonspawn = true
-	end
-	if inst.expiretaskinfo ~= nil then
-		data.expiretasktime = inst:TimeRemainingInTask(inst.expiretaskinfo)
 	end
 end
 
@@ -266,12 +249,6 @@ local function OnLoad(inst, data)
 
         if data.cocoonspawn ~= nil then
 			inst:AddTag("cocoonspawn")
-		end
-
-		if data.expiretasktime ~= nil then
-			inst.expiretask, inst.expiretaskinfo = inst:ResumeTask(data.expiretasktime, function()
-                inst.sg:GoToState("cocoon_expire")
-            end)
 		end
 	end
 end
@@ -325,13 +302,13 @@ local function commonfn()
 	inst:AddComponent("locomotor")
 	inst.components.locomotor:EnableGroundSpeedMultiplier(false)
 	inst.components.locomotor:SetTriggersCreep(false)
-	inst.components.locomotor.walkspeed = TUNING.GLOWFLY_WALKSPEED
-	inst.components.locomotor.runspeed = TUNING.GLOWFLY_RUNSPEED
+	inst.components.locomotor.walkspeed = TUNING.GLOWFLY_WALK_SPEED
+	inst.components.locomotor.runspeed = TUNING.GLOWFLY_RUN_SPEED
     inst.components.locomotor.pathcaps = { allowocean = true }
 
 	inst:AddComponent("inventoryitem")
 	inst.components.inventoryitem:SetOnDroppedFn(OnDropped)
-	inst.components.inventoryitem:SetOnPutInInventoryFn(OnPickedUp)
+	inst.components.inventoryitem:SetOnPutInInventoryFn(OnPutInInventory)
 	inst.components.inventoryitem.canbepickedup = false
 	inst.components.inventoryitem:ChangeImageName("lantern_fly")
 
@@ -347,9 +324,6 @@ local function commonfn()
 	inst.components.workable:SetWorkLeft(1)
 	inst.components.workable:SetOnFinishCallback(OnWorked)
 
-	MakeSmallBurnableCharacter(inst, "upper_body", Vector3(0, -1, 1))
-	MakeTinyFreezableCharacter(inst, "upper_body", Vector3(0, -1, 1))
-
 	inst:AddComponent("health")
 	inst.components.health:SetMaxHealth(1)
 
@@ -362,9 +336,9 @@ local function commonfn()
 	inst:AddComponent("knownlocations")
 
     inst:AddComponent("inspectable")
-    inst.components.inspectable.getstatus = inspect
+    inst.components.inspectable.getstatus = GetStatus
 
-    inst:ListenForEvent("death", OnKilled)
+    inst:ListenForEvent("death", OnDeath)
 
     inst:ListenForEvent("onchangecanopyzone", function()
         inst:DoTaskInTime(2+math.random()*1, function()
@@ -377,8 +351,6 @@ local function commonfn()
             UpdateLight(inst)
         end)
     end)
-
-    inst:WatchWorldState("season", OnChangeSeason)
 
 	inst:SetStateGraph("SGglowfly")
 	inst:SetBrain(brain)
@@ -404,18 +376,14 @@ local function commonfn()
 	inst.OnLoad = OnLoad
 
 	inst:DoTaskInTime(0, UpdateLight)
-	-- inst:DoPeriodicTask(5, CheckRemoveGlowfly, math.random() * 5)
+	inst:DoPeriodicTask(5, CheckRemoveGlowfly, math.random() * 5)
 
+    MakeHauntablePanic(inst)
     MakePoisonableCharacter(inst)
+	MakeSmallBurnableCharacter(inst, "upper_body", Vector3(0, -1, 1))
+	MakeTinyFreezableCharacter(inst, "upper_body", Vector3(0, -1, 1))
 
 	return inst
 end
 
-local function cocoonfn()
-    local inst = CreateEntity()
-
-    return inst
-end
-
 return Prefab("glowfly", commonfn, assets, prefabs)
-        -- Prefab("glowfly_cocoon", cocoonfn, assets, prefabs)
