@@ -46,6 +46,14 @@ local function OnChangeSeason(inst, season)
     end
 end
 
+local function OnFinishCallback(inst, worker)
+	if worker.components.inventory ~= nil then
+        worker.components.inventory:GiveItem("lightbulb", nil, inst:GetPosition())
+    else
+		inst:Remove()
+	end
+end
+
 local function OnSave(inst, data)
     if inst.expiretaskinfo ~= nil then
 		data.expiretasktime = inst:TimeRemainingInTask(inst.expiretaskinfo)
@@ -100,6 +108,10 @@ local function mainfn()
     inst:AddComponent("combat")
 	inst.components.combat.hiteffectsymbol = "body"
 
+    inst:AddComponent("workable")
+	inst.components.workable:SetWorkAction(ACTIONS.NET)
+	inst.components.workable:SetWorkLeft(1)
+	inst.components.workable:SetOnFinishCallback(OnFinishCallback)
 
     inst:SetStateGraph("glowfly_cocoon")
 

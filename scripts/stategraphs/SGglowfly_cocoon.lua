@@ -32,22 +32,6 @@ local states = {
     },
 
     State{
-        name = "cocoon_pre",
-        tags = {"cocoon","busy"},
-
-        onenter = function(inst)
-            inst.Physics:Stop()
-            inst.AnimState:PlayAnimation("cocoon_idle_pre")
-        end,
-
-        events= {
-            EventHandler("animover", function(inst)
-                inst.sg:GoToState("idle")
-            end),
-        },
-    },
-
-    State{
         name = "cocoon_pst",
         tags = {"cocoon","busy"},
 
@@ -110,7 +94,9 @@ local states = {
         end,
 
         events= {
-            EventHandler("animover", function(inst) inst:Remove() end),
+            EventHandler("animover", function(inst)
+                inst:Remove()
+            end),
         },
     },
 }

@@ -8,6 +8,7 @@ local events = {
     EventHandler("cocoon", function(inst)
         if not inst.sg:HasStateTag("busy") then
             inst:RemoveTag("wantstococoon")
+            inst.sg:GoToState("cocoon_pre")
             inst.ChangeToCocoon(inst, false)
         end
     end),
@@ -168,6 +169,23 @@ local states = {
         end,
 
         events = {
+            EventHandler("animover", function(inst)
+                inst.sg:GoToState("idle")
+            end),
+        },
+    },
+
+
+    State{
+        name = "cocoon_pre",
+        tags = {"cocoon","busy"},
+
+        onenter = function(inst)
+            inst.Physics:Stop()
+            inst.AnimState:PlayAnimation("cocoon_idle_pre")
+        end,
+
+        events= {
             EventHandler("animover", function(inst)
                 inst.sg:GoToState("idle")
             end),

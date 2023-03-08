@@ -7,23 +7,27 @@ local assets = {
 }
 
 -- 生成虫卵
-local function SpawnCocoons(inst, player)
+local function SpawnCocoons(inst)
     if math.random() < 0.4 then
         local pt = inst:GetPosition()
         local radius = 5 + math.random() * 10
-        local start_angle =  math.random() * 2 * PI
+        local start_angle = math.random() * 2 * PI
         local offset = FindWalkableOffset(pt, start_angle, radius, 10)
 
         if offset ~= nil then
             local newpoint = pt + offset
-            if player:GetDistanceSqToPoint(newpoint) > 40 * 40 then
-                for i = 1, math.random(6,10) do
-                    radius = math.random() * 8
-                    start_angle =  math.random() * 2 * PI
-                    local suboffset = FindWalkableOffset(newpoint,radius, start_angle, 10)
-                    local cocoon = SpawnPrefab("glowfly_cocoon")
-                    local spawnpt = newpoint + suboffset
-                    cocoon.Physics:Teleport(spawnpt.x,spawnpt.y,spawnpt.z)
+            for _, player in ipairs(AllPlayers) do
+                local distsq = player:GetdistanceSqToPoint(newpoint)
+                if distsq > 40 * 40 then
+                    for i = 1, math.random(6,10) do
+                        radius = math.random() * 8
+                        start_angle =  math.random() * 2 * PI
+                        local suboffset = FindWalkableOffset(newpoint, radius, start_angle, 10)
+                        local cocoon = SpawnPrefab("glowfly_cocoon")
+                        local spawnpt = newpoint + suboffset
+                        cocoon:AddTag("cocoonspawn")
+                        cocoon.Physics:Teleport(spawnpt.x,spawnpt.y,spawnpt.z)
+                    end
                 end
             end
         end
@@ -65,7 +69,7 @@ local function fn()
     inst.glowflyspawner = TheWorld.components.glowflyspawner
     if inst.glowflyspawner ~= nil then
         TheWorld:ListenForEvent("spawncocoons", function()
-            SpawnCocoons(inst, player)
+            SpawnCocoons(inst)
         end)
     end
 

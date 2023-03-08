@@ -35,30 +35,30 @@ local brains_post = {
 local class_post = {
 }
 
-for _, file_name in pairs(components_post) do
+for _, file_name in ipairs(components_post) do
     modimport("postinit/components/" .. file_name)
 end
 
-for _, file_name in pairs(prefabs_post) do
+for _, file_name in ipairs(prefabs_post) do
     modimport("postinit/prefabs/" .. file_name)
 end
 
-for _, file_name in pairs(batch_prefabs_post) do
+for _, file_name in ipairs(batch_prefabs_post) do
     modimport("postinit/batchprefabs/" .. file_name)
 end
 
-for _, file_name in pairs(scenarios_post) do
+for _, file_name in ipairs(scenarios_post) do
     modimport("postinit/scenarios/" .. file_name)
 end
 
-for _, file_name in pairs(stategraphs_post) do
+for _, file_name in ipairs(stategraphs_post) do
     modimport("postinit/stategraphs/SG" .. file_name)
 end
 
-for _, file_name in pairs(brains_post) do
+for _, file_name in ipairs(brains_post) do
     modimport("postinit/brains/" .. file_name)
 end
 
-for _, file_name in pairs(class_post) do
+for _, file_name in ipairs(class_post) do
     modimport("postinit/"  ..  file_name)
 end

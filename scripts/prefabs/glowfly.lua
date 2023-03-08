@@ -84,6 +84,12 @@ local function UpdateLight(inst)
     end
 end
 
+local function OnChangePhase(inst)
+    inst:DoTaskInTime(2+math.random()*1, function()
+        UpdateLight(inst)
+    end)
+end
+
 local function OnWorked(inst, worker)
 	if worker.components.inventory ~= nil then
         if inst.glowflyspawner ~= nil then
@@ -110,10 +116,8 @@ local function OnBorn(inst)
 end
 
 local function CheckRemoveGlowfly(inst)
-    local x, y, z = inst.Transform:GetWorldPosition()
     for _, player in ipairs(AllPlayers) do
-       local px, py, pz = player.Transform:GetWorldPosition()
-       local distsq = distsq(x, z, px, pz)
+       local distsq = inst:GetdistanceSqToPoint(player)
 
         if not inst:HasTag("cocoonspawn") and distsq > 30*30 and not inst.components.inventoryitem:IsHeld() then
             inst:Remove()
@@ -140,6 +144,8 @@ local function OnNear(inst)
 end
 
 local function ChangeToCocoon(inst, force)
+    inst.AddTag("cocoon")
+    inst:AddTag("cocoonspawn")
     if not force then
         local cocoon = SpawnPrefab("glowfly_cocoon")
         if not TheWorld.state.isautumn then
@@ -149,6 +155,7 @@ local function ChangeToCocoon(inst, force)
                 cocoon.components.playerprox:SetDist(30,31)
                 cocoon.components.playerprox:SetOnPlayerNear(OnNear)
             end
+            inst:Remove()
         end
         local pt = inst.Transform:GetWorldPosition()
         cocoon.Transform:SetPosition(pt)
@@ -340,17 +347,11 @@ local function commonfn()
 
     inst:ListenForEvent("death", OnDeath)
 
-    inst:ListenForEvent("onchangecanopyzone", function()
-        inst:DoTaskInTime(2+math.random()*1, function()
-            UpdateLight(inst)
-        end)
-    end)
+    inst:ListenForEvent("onchangecanopyzone", OnChangePhase)
 
-    inst:WatchWorldState("phase", function()
-        inst:DoTaskInTime(2+math.random()*1, function()
-            UpdateLight(inst)
-        end)
-    end)
+    inst:WatchWorldState("isday", OnChangePhase)
+    inst:WatchWorldState("isdusk", OnChangePhase)
+    inst:WatchWorldState("isnight", OnChangePhase)
 
 	inst:SetStateGraph("SGglowfly")
 	inst:SetBrain(brain)
